@@ -34,6 +34,7 @@ jobs:
           uv run python tools/benchmark_streaming.py
           --input test_data/vcf/manta.native.hg002.subset.vcf.gz
           --output /tmp/streaming-benchmark.json --repetitions 2
+          --source-commit "$GITHUB_SHA"
       - run: >-
           uv run python tools/scan_tokens.py --root .
           --policy policy/forbidden-token-hashes.json --git

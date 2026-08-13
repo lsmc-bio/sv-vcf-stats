@@ -14,6 +14,7 @@ import pysam.bcftools
 
 from .adapters import detect_adapter, get_adapter
 from .canonical import scan_variant
+from .canonicalize import CanonicalWriteResult, write_canonical_vcf
 from .exceptions import OutputError, UsageError, ValidationFailure
 from .io import assert_distinct_paths, input_metadata, materialize_input, open_variant
 from .models import (
@@ -26,6 +27,7 @@ from .models import (
 )
 from .schemas import validate_artifact
 from .serialization import file_sha256, payload_sha256, write_json_atomic
+from .sources import compare_sources, load_source_manifest
 
 
 def _artifact_paths(output: Path, index_format: str) -> tuple[Path, Path, Path]:
@@ -68,6 +70,29 @@ def _ensure_output_contract(
     observed = {str(item.get("name")) for item in prior["artifacts"]}
     if expected != observed:
         raise OutputError("Force refused because prior receipt ownership does not match")
+
+
+def _assert_source_manifest_paths_distinct(
+    source_manifest_path: str | Path,
+    source_manifest: Any,
+    candidates: tuple[Path, ...],
+) -> None:
+    members = [Path(source_manifest_path).resolve(strict=True)]
+    for entry in source_manifest.sources:
+        members.append(entry.path)
+        if entry.index_path is not None:
+            members.append(entry.index_path)
+    for candidate in candidates:
+        resolved_candidate = candidate.resolve(strict=False)
+        for member in members:
+            aliases = resolved_candidate == member
+            if candidate.exists():
+                try:
+                    aliases = aliases or os.path.samefile(candidate, member)
+                except OSError as exc:
+                    raise OutputError(f"Unable to compare source-manifest aliases: {exc}") from exc
+            if aliases:
+                raise OutputError("Output aliases a source-manifest input")
 
 
 def _index_variant(path: Path, *, index_format: str) -> Path:
@@ -171,6 +196,23 @@ def normalize(
         max_input_bytes=request.max_input_bytes,
         max_uncompressed_bytes=request.max_uncompressed_bytes,
     ) as source:
+        source_manifest_contract = None
+        if request.source_manifest is not None:
+            source_manifest_contract = load_source_manifest(
+                request.source_manifest,
+                combined_path=source,
+            )
+            alias_candidates: tuple[Path, ...] = (output, index, manifest, receipt)
+            if assessment_output is not None:
+                alias_candidates = (
+                    *alias_candidates,
+                    Path(assessment_output).resolve(strict=False),
+                )
+            _assert_source_manifest_paths_distinct(
+                request.source_manifest,
+                source_manifest_contract,
+                alias_candidates,
+            )
         _ensure_output_contract(source, output, index, manifest, receipt, force=force)
         source_meta = input_metadata(source, display_name=Path(str(request.input_path)).name)
         with open_variant(source) as input_variant:
@@ -204,7 +246,7 @@ def normalize(
             raise ValidationFailure(
                 f"Adapter does not support caller-specific rewriting: {descriptor.adapter_id}"
             )
-        if profile != "conservative":
+        if profile == "caller-lossless":
             diagnostic = Diagnostic(
                 "VSS-NORMALIZATION-PROFILE-UNIMPLEMENTED",
                 Severity.ERROR,
@@ -224,6 +266,57 @@ def normalize(
             raise ValidationFailure(
                 f"Normalization blocked by {len(blockers)} diagnostic finding(s)"
             )
+        if profile == "canonical" and scan.header["vcf_version"] != "VCFv4.5":
+            diagnostic = Diagnostic(
+                "VSS-NORMALIZATION-CANONICAL-INPUT-VERSION",
+                Severity.ERROR,
+                "normalization_safety",
+                "Canonical splitting requires finalized VCF 4.5 input semantics",
+                specification="VCF 4.5",
+                fixability=Fixability.REQUIRES_ADAPTER,
+                blocks_normalization=True,
+                adapter_id=descriptor.adapter_id,
+                producer_version=detection.selected.version,
+            )
+            _publish_assessment(assessment_output, (*scan.diagnostics, diagnostic))
+            raise ValidationFailure("Canonical splitting requires finalized VCF 4.5 input")
+        source_comparison_evidence: dict[str, Any] | None = None
+        if profile == "canonical" and descriptor.producer_kind == "merger":
+            if request.source_manifest is None:
+                diagnostic = Diagnostic(
+                    "VSS-NORMALIZATION-SOURCE-MANIFEST-REQUIRED",
+                    Severity.ERROR,
+                    "normalization_safety",
+                    "Merged canonical rewriting requires a digest-bound source manifest",
+                    specification="source comparison contract",
+                    fixability=Fixability.REQUIRES_SOURCE_EVIDENCE,
+                    blocks_normalization=True,
+                    adapter_id=descriptor.adapter_id,
+                    producer_version=detection.selected.version,
+                )
+                _publish_assessment(assessment_output, (*scan.diagnostics, diagnostic))
+                raise ValidationFailure("Merged canonical rewriting requires a source manifest")
+            comparisons, source_comparison_evidence = compare_sources(
+                source,
+                request.source_manifest,
+            )
+            unsafe = [item for item in comparisons if item["status"] != "preserved"]
+            if unsafe:
+                diagnostic = Diagnostic(
+                    "VSS-NORMALIZATION-SOURCE-COMPARISON-UNSAFE",
+                    Severity.ERROR,
+                    "normalization_safety",
+                    "Source comparison contains unresolved or unpreserved lineage",
+                    specification="source comparison contract",
+                    fixability=Fixability.REQUIRES_SOURCE_EVIDENCE,
+                    blocks_normalization=True,
+                    adapter_id=descriptor.adapter_id,
+                    producer_version=detection.selected.version,
+                )
+                _publish_assessment(assessment_output, (*scan.diagnostics, diagnostic))
+                raise ValidationFailure(
+                    f"Canonical normalization blocked by {len(unsafe)} source comparison(s)"
+                )
         source_index = next(
             (
                 candidate
@@ -252,7 +345,12 @@ def normalize(
             "profile": profile,
             "output_format": inferred,
             "index_format": effective_index,
-            "target_vcf": "4.5",
+            "target_vcf": "4.5" if profile == "canonical" else scan.header["vcf_version"],
+            "source_manifest_sha256": (
+                None
+                if request.source_manifest is None
+                else file_sha256(Path(request.source_manifest).resolve(strict=True))
+            ),
         }
         request_sha = payload_sha256(request_payload)
         stage = Path(tempfile.mkdtemp(prefix=f".{output.name}.stage.", dir=output.parent))
@@ -262,36 +360,85 @@ def normalize(
         stage_manifest = stage / manifest.name
         stage_receipt = stage / receipt.name
         try:
-            with open_variant(source) as input_variant:
-                header = input_variant.header.copy()
-                header.add_line(f"##VCFSVSTATS1_REQUEST_SHA256={request_sha}")
-                mode = "wb" if inferred == "bcf" else "wz"
-                with (
-                    pysam.VariantFile(str(stage_data), mode, header=header) as output_variant,
-                    mappings.open("x", encoding="utf-8") as mapping_handle,
-                ):
-                    for ordinal, record in enumerate(input_variant, start=1):
-                        output_variant.write(record)
-                        mapping_handle.write(
-                            json.dumps(
-                                {
-                                    "source_ordinal": ordinal,
-                                    "source_id": record.id,
-                                    "output_id": record.id,
-                                    "transform_codes": [],
-                                },
-                                sort_keys=True,
-                            )
-                            + "\n"
+            canonical_result: CanonicalWriteResult | None = None
+            if profile == "canonical":
+                plain_vcf = stage / "canonical.vcf"
+                canonical_result = write_canonical_vcf(
+                    source,
+                    plain_vcf,
+                    mappings,
+                    request_sha256=request_sha,
+                    source_sha256=str(source_meta["sha256"]),
+                    temp_dir=stage,
+                )
+                if inferred == "vcf.gz":
+                    pysam.tabix_compress(str(plain_vcf), str(stage_data), force=False)
+                else:
+                    if canonical_result.leading_phase_indicator:
+                        raise ValidationFailure(
+                            "BCF output cannot preserve a leading GT phase indicator with the "
+                            "supported HTSlib boundary"
                         )
-                    mapping_handle.flush()
-                    os.fsync(mapping_handle.fileno())
+                    with (
+                        pysam.VariantFile(str(plain_vcf)) as canonical_input,
+                        pysam.VariantFile(
+                            str(stage_data),
+                            "wb",
+                            header=canonical_input.header.copy(),
+                        ) as output_variant,
+                    ):
+                        for record in canonical_input:
+                            output_variant.write(record)
+            else:
+                with open_variant(source) as input_variant:
+                    header = input_variant.header.copy()
+                    header.add_line(f"##VCFSVSTATS1_REQUEST_SHA256={request_sha}")
+                    mode = "wb" if inferred == "bcf" else "wz"
+                    with (
+                        pysam.VariantFile(str(stage_data), mode, header=header) as output_variant,
+                        mappings.open("x", encoding="utf-8") as mapping_handle,
+                    ):
+                        for ordinal, record in enumerate(input_variant, start=1):
+                            output_variant.write(record)
+                            mapping_handle.write(
+                                json.dumps(
+                                    {
+                                        "source_ordinal": ordinal,
+                                        "source_id": record.id,
+                                        "output_id": record.id,
+                                        "output_ordinal": ordinal,
+                                        "transform_codes": [],
+                                    },
+                                    sort_keys=True,
+                                )
+                                + "\n"
+                            )
+                        mapping_handle.flush()
+                        os.fsync(mapping_handle.fileno())
 
             stage_index = _index_variant(stage_data, index_format=effective_index)
             with open_variant(stage_data) as check:
                 output_records = sum(1 for _ in check)
-            if output_records != int(scan.callset["record_count"]):
-                raise OutputError("Normalized record count does not match the input")
+            expected_output_records = (
+                int(scan.callset["record_count"])
+                if canonical_result is None
+                else canonical_result.output_records
+            )
+            if output_records != expected_output_records:
+                raise OutputError("Normalized record count does not match the split plan")
+            output_scan = scan_variant(
+                stage_data,
+                temp_dir=request.temp_dir,
+                adapter_id=detection.selected.adapter_id,
+            )
+            output_blockers = [
+                item for item in output_scan.diagnostics if item.blocks_normalization
+            ]
+            if output_blockers:
+                raise OutputError(
+                    "Normalized output failed embedded validation with "
+                    f"{len(output_blockers)} blocker(s)"
+                )
             output_sha = file_sha256(stage_data)
             index_sha = file_sha256(stage_index)
             manifest_base = {
@@ -306,8 +453,12 @@ def normalize(
                 },
                 "cardinality": {
                     "input_records": scan.callset["record_count"],
+                    "input_alleles": scan.callset["allele_count"],
                     "output_records": output_records,
                     "record_mappings": output_records,
+                    "event_identifiers": (
+                        0 if canonical_result is None else canonical_result.event_identifiers
+                    ),
                 },
                 "input": {
                     "name": source_meta["display_name"],
@@ -321,7 +472,13 @@ def normalize(
                 },
                 "output": {"name": output.name, "sha256": output_sha, "records": output_records},
                 "index": {"name": index.name, "sha256": index_sha},
-                "normalization": {"profile": profile, "target_vcf": "4.5"},
+                "normalization": {
+                    "profile": profile,
+                    "target_vcf": (
+                        "4.5" if profile == "canonical" else scan.header["vcf_version"]
+                    ),
+                },
+                "source_comparison": source_comparison_evidence,
                 "reference": reference_identity,
                 "schemas": {
                     "manifest": "urn:vcf-sv-stats:schema:transforms:1.0.0",

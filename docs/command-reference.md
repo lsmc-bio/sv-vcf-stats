@@ -110,9 +110,11 @@ models or raise structured exceptions.
 | `urn:vcf-sv-stats:adapter:sentieon-shortread-sv:1` | Sentieon short-read SV | — | unsupported | no |
 <!-- adapter-matrix:end -->
 
-“Rewrite enabled” means the adapter permits the implemented conservative
-profile when no blocking diagnostics exist. It does not imply canonical or
-caller-lossless rewriting.
+“Rewrite enabled” means the adapter permits conservative rewriting when no
+blocking diagnostics exist. It also permits canonical rewriting for finalized
+VCF 4.5 inputs when field and relationship proofs are complete; merger
+adapters require a safe digest-bound source comparison. It never implies
+`caller-lossless` or lossy rewriting.
 
 ## Configuration
 

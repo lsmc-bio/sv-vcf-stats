@@ -195,3 +195,16 @@ def test_readme_corpus_and_dependency_claims_match_metadata() -> None:
     for dependency in ("cli-core-yo==2.1.1", "pysam==0.24.0"):
         assert dependency in project["dependencies"]
         assert f"`{dependency}`" in readme
+
+
+def test_every_emitted_diagnostic_is_explainable() -> None:
+    source_root = ROOT / "src/vcf_sv_stats"
+    emitted = {
+        code
+        for path in source_root.rglob("*.py")
+        if path.name != "diagnostics.py"
+        for code in re.findall(r'"(VSS-[A-Z0-9-]+)"', path.read_text(encoding="utf-8"))
+    }
+    from vcf_sv_stats.diagnostics import CATALOG
+
+    assert emitted <= set(CATALOG)

@@ -27,10 +27,10 @@ streams records into a canonical observation model, resolves relationships on
 disk, reports layered diagnostics, and emits deterministic JSON whose metrics
 name their grain and denominator.
 
-> **Project status:** this is a private, pre-1.0 implementation. The supported
-> conservative workflow is real and tested; representation-changing canonical
-> normalization and several release qualifications remain intentionally
-> fail-closed. See [What is deliberately unfinished](#what-is-deliberately-unfinished).
+> **Project status:** this is a private, pre-1.0 release candidate. The complete
+> fixed v1 acceptance plan is implemented and qualification evidence is retained
+> in the repository. Public visibility, package or image publication, upstream
+> merge, and the `1.0.0` tag remain explicit approval gates.
 
 ## The 30-second tour
 
@@ -70,8 +70,8 @@ The result is derived from the committed fixture—not a hand-written mock:
   "types": {
     "BND": 6,
     "DEL": 53,
-    "INS": 37,
-    "UNKNOWN": 4
+    "DUP": 4,
+    "INS": 37
   }
 }
 ```
@@ -204,8 +204,35 @@ calls.normalized.vcf.gz.receipt.json
 ```
 
 The source file is never changed. Input/output aliases, incomplete prior
-artifact sets, unsafe adapters, and unimplemented rewrite profiles fail before
+artifact sets, unsafe adapters, and unsupported rewrite profiles fail before
 publication.
+
+### Canonicalize finalized VCF 4.5 multiallelic records
+
+```bash
+uv run vcf-sv-stats normalize finalized.vcf.gz \
+  --output canonical.vcf.gz \
+  --profile canonical
+```
+
+Canonical normalization is deliberately narrow: the input must declare the
+final VCF 4.5 contract, the selected adapter must permit rewriting, and every
+cardinality and relationship must be losslessly remappable. The two-pass,
+disk-backed planner splits alternate alleles; remaps `Number=A/R/G/P/LA/LR/LG`,
+local alleles, arbitrary supported ploidy, GT and phase state; rewrites IDs,
+mates, and events; and emits complete source lineage. Any ambiguity stops before
+publication.
+
+For merged callsets, supply a local digest-bound source manifest:
+
+```bash
+uv run vcf-sv-stats discrepancies merged.vcf.gz \
+  --source-manifest sources.json \
+  --output source-comparison.json
+```
+
+The comparator reports `preserved`, `not_preserved`, `not_found`, or
+`ambiguous`. It never proposes missing evidence for reinsertion.
 
 ### Build an atomic report directory
 
@@ -238,15 +265,15 @@ See the [architecture guide](docs/architecture.md) for the phase model and the
 
 | Producer | Tested version | Status | Rewrite policy |
 |---|---:|---|---|
-| Generic standards adapter | — | supported | conservative only |
-| Manta | 1.6.0 | supported | conservative |
-| TIDDIT | 3.9.7 | supported | conservative |
-| dysgu | 1.8.0 | supported | conservative |
-| Sniffles2 | 2.8.0 | supported | conservative |
-| Sentieon LongReadSV | 202503.03 | supported | conservative |
-| Sentieon CNVscope | 202503.03 | supported | conservative |
-| Jasmine | 1.1.5 | supported | conservative |
-| SURVIVOR | 1.0.6 | supported | conservative |
+| Generic standards adapter | — | supported | conservative; canonical for proven VCF 4.5 |
+| Manta | 1.6.0 | supported | conservative; canonical for proven VCF 4.5 |
+| TIDDIT | 3.9.7 | supported | conservative; canonical for proven VCF 4.5 |
+| dysgu | 1.8.0 | supported | conservative; canonical for proven VCF 4.5 |
+| Sniffles2 | 2.8.0 | supported | conservative; canonical for proven VCF 4.5 |
+| Sentieon LongReadSV | 202503.03 | supported | conservative; canonical for proven VCF 4.5 |
+| Sentieon CNVscope | 202503.03 | supported | conservative; canonical for proven VCF 4.5 |
+| Jasmine | 1.1.5 | supported | canonical requires complete source evidence |
+| SURVIVOR | 1.0.6 | supported | canonical requires complete source evidence |
 | OctopuSV | 0.4.1 | provisional | disabled |
 | TrusSV | 0.3.1 | provisional | disabled |
 | Severus | — | unsupported | disabled |
@@ -282,6 +309,7 @@ See [fixture governance](docs/fixture-governance.md) and the
 |---|---|
 | Summary | `vcf-sv-stats:summary:1` |
 | Canonical observation | `vcf-sv-stats.canonical-observation/1.0.0` |
+| Source manifest | `urn:vcf-sv-stats:schema:source-manifest:1.0.0` |
 | Schemas | `urn:vcf-sv-stats:schema:<artifact>:<version>` |
 | Adapters | `urn:vcf-sv-stats:adapter:<producer>:1` |
 | VCF metadata | `VCFSVSTATS1_*` |
@@ -328,25 +356,27 @@ names—not source rows or private paths. See [SECURITY.md](SECURITY.md).
 | [Output contract](docs/output-contract.md) | Summary, diagnostics, manifests, receipts, and consumer rules |
 | [Fixture governance](docs/fixture-governance.md) | HG002 derivation, sanitization, provenance, and redistribution review |
 | [Testing guide](docs/testing.md) | Local matrix, fixture goldens, package and neutrality checks |
+| [Performance qualification](docs/benchmarks/20260813_streaming_qualification.md) | 100K through 10M scaling, memory, baseline, threads, and interruption evidence |
+| [Distribution guide](docs/distribution.md) | Offline install, Bioconda, OCI, Apptainer, SBOM, and provenance contract |
 | [MultiQC integration](docs/multiqc-integration.md) | Producer/consumer boundary for aggregate reporting |
 | [Normative specification](docs/specifications/vcf-sv-stats-1.0.0.md) | Pre-1.0 requirements and stable terminology |
-| [Implementation ledger](docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) | Acceptance evidence, incomplete rows, and release gates |
+| [Implementation ledger](docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) | Acceptance evidence, completion accounting, and release gates |
 
-## What is deliberately unfinished
+## Release boundary
 
-This codebase does **not** claim complete v1 conformance yet. The controlling
-ledger keeps these limits visible:
+The implementation plan and its six former shortfalls are complete: finalized
+VCF 4.5 behavior, source/merged comparison, canonical multiallelic
+normalization, native aggregate reporting, large-callset qualification, and
+offline multi-platform distribution evidence all have executable proofs.
 
-- the complete finalized VCF 4.5 local-allele and `Number=P/LA/LR/LG` matrix;
-- digest-bound merged/source lineage comparison;
-- canonical multiallelic splitting with complete cardinality and phase remapping;
-- million- and ten-million-record performance/interruption qualification;
-- a native upstream MultiQC module;
-- final offline, multi-architecture, attested distribution verification.
+That does not silently turn a private candidate into a release. The repository
+remains private and pre-1.0. No package or container has been published, no
+public visibility change or version tag has been made, fixture redistribution
+must be reviewed again before public release, and the draft native MultiQC
+contribution still requires ordinary upstream review and merge.
 
-Representation-changing profiles fail closed until their proofs and tests
-exist. Public visibility, package/container publication, upstream contribution,
-and a `1.0.0` tag remain separate approval gates.
+`caller-lossless` remains a reserved, unsupported profile, and every lossy
+authorization remains rejected because v1 implements no lossy transform.
 
 ## Contributing
 

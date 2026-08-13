@@ -12,7 +12,7 @@
   "types": {
     "BND": 6,
     "DEL": 53,
-    "INS": 37,
-    "UNKNOWN": 4
+    "DUP": 4,
+    "INS": 37
   }
 }

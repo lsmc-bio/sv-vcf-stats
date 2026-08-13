@@ -1,0 +1,53 @@
+{% set version = environ.get("SETUPTOOLS_SCM_PRETEND_VERSION", "0.1.0.dev0") %}
+
+package:
+  name: vcf-sv-stats
+  version: {{ version }}
+
+source:
+  path: ../..
+
+build:
+  noarch: python
+  number: 0
+  script_env:
+    - SETUPTOOLS_SCM_PRETEND_VERSION
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  entry_points:
+    - vcf-sv-stats = vcf_sv_stats.cli:main
+    - vcf-sv-stats-verify-install = vcf_sv_stats.verify_install:main
+
+requirements:
+  host:
+    - python >=3.11,<3.14
+    - pip
+    - setuptools ==84.0.0
+    - setuptools-scm ==10.2.1
+  run:
+    - python >=3.11,<3.14
+    - cli-core-yo ==2.1.1
+    - jsonschema >=4.23,<5
+    - pysam ==0.24.0
+    - pyyaml >=6.0.2,<7
+    - rfc8785 >=0.1.4,<1
+    - typer >=0.21,<0.22
+
+test:
+  imports:
+    - vcf_sv_stats
+    - vcf_sv_stats.api.v1
+  commands:
+    - vcf-sv-stats version
+    - vcf-sv-stats --json info
+    - vcf-sv-stats schema show summary
+    - vcf-sv-stats-verify-install
+
+about:
+  home: https://pypi.org/project/vcf-sv-stats/
+  summary: Standards-aware structural-variant and copy-number VCF statistics
+  license: Apache-2.0
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - iamh2o

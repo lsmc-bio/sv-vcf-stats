@@ -34,7 +34,7 @@ sequenceDiagram
     P->>G: canonical observations
     G-->>V: resolved and unresolved relationships
     V-->>U: layered diagnostics + statistics
-    opt conservative normalization
+    opt proven normalization profile
         V->>O: validated staged data + index + mappings
         O-->>U: data + manifest + receipt
     end
@@ -134,12 +134,20 @@ baseline contract.
 
 ### 8. Optional normalization
 
-The implemented `conservative` profile preserves record cardinality and
-semantics. Provisional/unsupported adapters, relationship blockers, aliasing,
-and representation-changing profile requests stop before data publication.
+The `conservative` profile preserves record cardinality and semantics. The
+`canonical` profile is a deliberately narrow, lossless VCF 4.5 transform: a
+two-pass, disk-backed plan splits multiallelic records, projects standard and
+local allele-cardinality fields for arbitrary ploidy, preserves phase, rewrites
+relationship identifiers, and emits complete source-to-output mappings.
 
-The `caller-lossless` and `canonical` names are reserved but unimplemented.
-They fail with a structured assessment and do not produce a data file.
+Canonical rewriting requires a finalized `VCFv4.5` header, a rewrite-enabled
+adapter, unambiguous field cardinality, and complete relationship evidence.
+Merged producers additionally require a digest-bound local source manifest and
+a safe source comparison. Any missing proof stops before data publication.
+
+`caller-lossless` remains reserved and unimplemented. Provisional or
+unsupported adapters, aliasing, relationship blockers, and every lossy
+authorization likewise fail with a structured assessment and no data file.
 
 ### 9. Independent validation and indexing
 

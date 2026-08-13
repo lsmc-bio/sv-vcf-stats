@@ -1,0 +1,42 @@
+{
+  "schema_name": "vcf-sv-stats.runtime-license-inventory",
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "vcf-sv-stats",
+    "license_expression": "Apache-2.0"
+  },
+  "python": [
+    {"name": "annotated-doc", "version": "0.0.5", "license_expression": "MIT"},
+    {"name": "attrs", "version": "26.1.0", "license_expression": "MIT"},
+    {"name": "cli-core-yo", "version": "2.1.1", "license_expression": "MIT"},
+    {"name": "click", "version": "8.4.2", "license_expression": "BSD-3-Clause"},
+    {"name": "colorama", "version": "0.4.6", "license_expression": "BSD-3-Clause", "marker": "sys_platform == 'win32'"},
+    {"name": "jsonschema", "version": "4.26.0", "license_expression": "MIT"},
+    {"name": "jsonschema-specifications", "version": "2025.9.1", "license_expression": "MIT"},
+    {"name": "markdown-it-py", "version": "4.2.0", "license_expression": "MIT"},
+    {"name": "mdurl", "version": "0.1.2", "license_expression": "MIT"},
+    {"name": "pygments", "version": "2.20.0", "license_expression": "BSD-2-Clause"},
+    {"name": "pysam", "version": "0.24.0", "license_expression": "MIT"},
+    {"name": "pyyaml", "version": "6.0.3", "license_expression": "MIT"},
+    {"name": "referencing", "version": "0.37.0", "license_expression": "MIT"},
+    {"name": "rfc8785", "version": "0.1.4", "license_expression": "Apache-2.0"},
+    {"name": "rich", "version": "14.3.4", "license_expression": "MIT"},
+    {"name": "rpds-py", "version": "2026.6.3", "license_expression": "MIT"},
+    {"name": "shellingham", "version": "1.5.4", "license_expression": "ISC"},
+    {"name": "typer", "version": "0.21.2", "license_expression": "MIT"},
+    {"name": "typing-extensions", "version": "4.16.0", "license_expression": "PSF-2.0", "marker": "python_full_version < '3.13'"}
+  ],
+  "native": [
+    {"name": "htslib", "version": "1.23.1", "license_expression": "MIT AND BSD-3-Clause", "distribution": "pysam"},
+    {"name": "bcftools", "version": "1.23.1", "license_expression": "MIT OR GPL-3.0-only", "distribution": "pysam"},
+    {"name": "samtools", "version": "1.23.1", "license_expression": "MIT", "distribution": "pysam"},
+    {"name": "lz4", "version": "bundled", "license_expression": "BSD-2-Clause", "distribution": "pysam"}
+  ],
+  "fixtures": {
+    "name": "sanitized-hg002-test-fixtures",
+    "license_expression": "LicenseRef-Public-Data-Redistribution-Reviewed",
+    "notice": "test_data/NOTICE.md",
+    "manifest": "test_data/manifest.json",
+    "public_release_review_required": true
+  }
+}

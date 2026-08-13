@@ -22,6 +22,7 @@ from .models import (
 )
 from .schemas import validate_artifact
 from .serialization import payload_sha256, write_bytes_atomic, write_json_atomic
+from .sources import compare_sources
 
 
 def _analyze(
@@ -188,7 +189,23 @@ def discrepancies(
 ) -> DiscrepancyResult:
     metadata, _detection, scan = _analyze(request)
     counts = dict(sorted(Counter(item.severity.value for item in scan.diagnostics).items()))
-    result = DiscrepancyResult(scan.diagnostics, counts, scan.complete, None)
+    source_comparisons: tuple[dict[str, Any], ...] = ()
+    source_evidence: dict[str, Any] | None = None
+    if request.source_manifest is not None:
+        if str(request.input_path) == "-":
+            raise UsageError("Source-manifest comparison requires a local primary input")
+        source_comparisons, source_evidence = compare_sources(
+            request.input_path,
+            request.source_manifest,
+        )
+    result = DiscrepancyResult(
+        scan.diagnostics,
+        counts,
+        scan.complete,
+        None,
+        source_comparisons,
+        source_evidence,
+    )
     if output is None:
         return result
     if output_format not in {"json", "jsonl", "tsv"}:
@@ -203,6 +220,8 @@ def discrepancies(
             "counts": counts,
             "diagnostics": [item.as_dict() for item in scan.diagnostics],
             "complete": scan.complete,
+            "source_comparisons": list(source_comparisons),
+            "source_evidence": source_evidence,
         }
         validate_artifact("discrepancies", artifact)
         write_json_atomic(target, artifact, force=force)
@@ -210,6 +229,16 @@ def discrepancies(
         content = b"".join(
             (json.dumps(item.as_dict(), sort_keys=True) + "\n").encode()
             for item in scan.diagnostics
+        )
+        content += b"".join(
+            (
+                json.dumps(
+                    {"record_type": "source_comparison", **item},
+                    sort_keys=True,
+                )
+                + "\n"
+            ).encode()
+            for item in source_comparisons
         )
         write_bytes_atomic(target, content, force=force)
     else:
@@ -227,5 +256,28 @@ def discrepancies(
                 item.message.replace("\t", " ").replace("\n", " "),
             )
             rows.append("\t".join(values) + "\n")
+        for source_item in source_comparisons:
+            rows.append(
+                "\t".join(
+                    (
+                        "VSS-SOURCE-COMPARISON",
+                        "info",
+                        "source_comparison",
+                        str(source_item["source_record_ordinal"]),
+                        "",
+                        "",
+                        "",
+                        str(source_item["status"]),
+                    )
+                )
+                + "\n"
+            )
         write_bytes_atomic(target, "".join(rows).encode(), force=force)
-    return DiscrepancyResult(scan.diagnostics, counts, scan.complete, target)
+    return DiscrepancyResult(
+        scan.diagnostics,
+        counts,
+        scan.complete,
+        target,
+        source_comparisons,
+        source_evidence,
+    )

@@ -14,6 +14,7 @@
     "output": {"type": "object"},
     "index": {"type": "object"},
     "normalization": {"type": "object"},
+    "source_comparison": {"type": ["object", "null"]},
     "reference": {"type": "object"},
     "schemas": {"type": "object"},
     "record_mappings": {"type": "array", "items": {"type": "object"}}

@@ -40,18 +40,20 @@ dev = [
   "pytest>=9.0.3,<10",
   "pytest-cov>=6,<7",
   "ruff>=0.11,<1",
+  "spdx-tools>=0.8.5,<0.9",
   "types-jsonschema>=4.23",
   "types-PyYAML>=6.0.12",
 ]
 
 [project.scripts]
 vcf-sv-stats = "vcf_sv_stats.cli:main"
+vcf-sv-stats-verify-install = "vcf_sv_stats.verify_install:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-vcf_sv_stats = ["data/*.yaml", "schemas/*.json"]
+vcf_sv_stats = ["data/*.yaml", "schemas/*.json", "py.typed"]
 
 [tool.setuptools_scm]
 fallback_version = "0.1.0.dev0"

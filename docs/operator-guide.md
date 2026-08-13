@@ -144,9 +144,10 @@ uv run vcf-sv-stats stats calls.vcf --regions chr1 --regions-scan
 Every regional result is marked partial. Normalization rejects regional scope
 because a partial rewrite could masquerade as a complete callset.
 
-## Conservative normalization
+## Normalization
 
-The pre-1.0 implementation supports only the `conservative` profile:
+Use `conservative` when record cardinality and representation must remain
+unchanged:
 
 ```bash
 uv run vcf-sv-stats normalize calls.vcf \
@@ -168,10 +169,24 @@ rejects input/output aliases, unrelated existing paths, incomplete force
 targets, provisional or unsupported rewrites, and any diagnostic that blocks
 normalization.
 
-`caller-lossless` and `canonical` are reserved contract names. They return a
-complete safety assessment and fail; they never copy the input while claiming a
-representation-changing rewrite. Likewise, every `--authorize-loss` value is
-currently rejected because no lossy transform is implemented.
+Use `canonical` only for a finalized VCF 4.5 input whose adapter and field
+declarations prove lossless multiallelic splitting:
+
+```bash
+uv run vcf-sv-stats normalize finalized.vcf.gz \
+  --output finalized.canonical.vcf.gz \
+  --profile canonical
+```
+
+The canonical planner projects `Number=A/R/G/P/LA/LR/LG`, GT, arbitrary
+ploidy, and phase state; rewrites IDs, mates, and events; and records every
+source-to-output mapping. A merged callset also needs `--source-manifest` with
+digest-bound local source files. Missing or ambiguous evidence fails before
+publication.
+
+`caller-lossless` remains a reserved contract name and fails with a complete
+safety assessment. Every `--authorize-loss` value is rejected because no lossy
+transform is implemented.
 
 ### Publication and recovery
 

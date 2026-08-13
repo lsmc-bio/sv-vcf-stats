@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:install-verification:1.0.0",
+  "title": "vcf-sv-stats installed-distribution verification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "environment", "embedded_input", "formats", "semantic_sha256", "cli_commands", "network_required", "passed", "receipt_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.install-verification"},
+    "schema_version": {"const": "1.0.0"},
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operating_system", "machine", "python_version", "tool_version", "pysam_version", "htslib_version"],
+      "properties": {
+        "operating_system": {"type": "string", "minLength": 1},
+        "machine": {"type": "string", "minLength": 1},
+        "python_version": {"type": "string", "minLength": 1},
+        "tool_version": {"type": "string", "minLength": 1},
+        "pysam_version": {"const": "0.24.0"},
+        "htslib_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "embedded_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["records", "samples", "source_derived"],
+      "properties": {
+        "records": {"const": 2},
+        "samples": {"const": ["SAMPLE1"]},
+        "source_derived": {"const": false}
+      }
+    },
+    "formats": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["container", "input_sha256", "input_index_sha256", "normalized_sha256", "normalized_index_sha256", "semantic_sha256", "normalized_semantic_sha256"],
+        "properties": {
+          "container": {"enum": ["vcf.gz", "bcf"]},
+          "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "input_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "normalized_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "normalized_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "normalized_semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cli_commands": {"const": ["version", "info", "validate", "stats"]},
+    "network_required": {"const": false},
+    "passed": {"const": true},
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

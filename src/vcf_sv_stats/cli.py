@@ -115,6 +115,7 @@ def _request(
     temp_dir: Path | None,
     regions: list[str] | None = None,
     regions_scan: bool = False,
+    source_manifest: Path | None = None,
 ) -> OperationRequest:
     config = _effective_config()
     effective_threads = config["io"]["threads"] if threads is None else threads
@@ -137,6 +138,7 @@ def _request(
         max_uncompressed_bytes=config["io"]["max_uncompressed_bytes"],
         regions=tuple(regions or ()),
         regions_scan=regions_scan,
+        source_manifest=source_manifest,
     )
 
 
@@ -160,6 +162,10 @@ RegionsOpt = Annotated[list[str] | None, typer.Option("--regions", help="Restric
 RegionsScanOpt = Annotated[
     bool,
     typer.Option("--regions-scan", help="Permit a full scan when regional access lacks an index."),
+]
+SourceManifestOpt = Annotated[
+    Path | None,
+    typer.Option("--source-manifest", exists=True, dir_okay=False),
 ]
 
 
@@ -250,6 +256,7 @@ def discrepancies_command(
     temp_dir: TempOpt = None,
     regions: RegionsOpt = None,
     regions_scan: RegionsScanOpt = False,
+    source_manifest: SourceManifestOpt = None,
     output_format: Annotated[str, typer.Option("--format")] = "json",
     fail_on: Annotated[str, typer.Option("--fail-on")] = "never",
     force: Annotated[bool, typer.Option("--force")] = False,
@@ -269,6 +276,7 @@ def discrepancies_command(
                 temp_dir,
                 regions,
                 regions_scan,
+                source_manifest,
             ),
             output=output_path,
             output_format=output_format,
@@ -335,6 +343,7 @@ def normalize_command(
     mode: ModeOpt = "standard",
     threads: ThreadsOpt = None,
     temp_dir: TempOpt = None,
+    source_manifest: SourceManifestOpt = None,
     profile: Annotated[str, typer.Option("--profile")] = "conservative",
     output_format: Annotated[str | None, typer.Option("--output-format")] = None,
     index_format: Annotated[str, typer.Option("--index-format")] = "auto",
@@ -352,6 +361,7 @@ def normalize_command(
             mode,
             threads,
             temp_dir,
+            source_manifest=source_manifest,
         )
         if get_context().dry_run:
             validation_result = validate(request)
@@ -392,6 +402,7 @@ def run_command(
     mode: ModeOpt = "standard",
     threads: ThreadsOpt = None,
     temp_dir: TempOpt = None,
+    source_manifest: SourceManifestOpt = None,
     include_normalized: Annotated[bool, typer.Option("--normalize")] = False,
     profile: Annotated[str, typer.Option("--profile")] = "conservative",
 ) -> None:
@@ -405,6 +416,7 @@ def run_command(
             mode,
             threads,
             temp_dir,
+            source_manifest=source_manifest,
         )
         if get_context().dry_run:
             validation = validate(request)

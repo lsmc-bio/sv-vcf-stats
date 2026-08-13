@@ -10,7 +10,20 @@ import jsonschema
 
 from vcf_sv_stats.exceptions import UsageError, ValidationFailure
 
-SCHEMA_NAMES = ("summary", "diagnostics", "discrepancies", "transforms", "identity", "receipt")
+SCHEMA_NAMES = (
+    "summary",
+    "diagnostics",
+    "discrepancies",
+    "distribution-qualification",
+    "transforms",
+    "identity",
+    "install-verification",
+    "oci-audit",
+    "source-manifest",
+    "receipt",
+    "recovery-qualification",
+    "streaming-benchmark",
+)
 
 
 def load_schema(name: str) -> dict[str, Any]:

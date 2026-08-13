@@ -21,6 +21,12 @@ from vcf_sv_stats.models import (
     ValidationResult,
 )
 from vcf_sv_stats.normalize import normalize, run_bundle
+from vcf_sv_stats.sources import (
+    SourceManifest,
+    SourceManifestEntry,
+    compare_sources,
+    load_source_manifest,
+)
 
 __all__ = [
     "AdapterCandidate",
@@ -34,14 +40,18 @@ __all__ = [
     "NormalizationResult",
     "OperationRequest",
     "RunResult",
+    "SourceManifest",
+    "SourceManifestEntry",
     "StatisticsResult",
     "ValidationResult",
+    "compare_sources",
     "detect_adapter",
     "discrepancies",
     "get_adapter",
     "inspect",
     "iter_canonical",
     "list_adapters",
+    "load_source_manifest",
     "normalize",
     "run_bundle",
     "stats",

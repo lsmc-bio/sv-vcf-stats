@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:recovery-qualification:1.0.0",
+  "title": "vcf-sv-stats recovery qualification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "environment", "input", "policy", "scenarios", "receipt_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.recovery-qualification"},
+    "schema_version": {"const": "1.0.0"},
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operating_system", "operating_system_release", "machine", "python_version", "source_commit"],
+      "properties": {
+        "operating_system": {"type": "string", "minLength": 1},
+        "operating_system_release": {"type": "string", "minLength": 1},
+        "machine": {"type": "string", "minLength": 1},
+        "python_version": {"type": "string", "minLength": 1},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "bytes", "sha256"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "pattern": "^[^/\\\\]+$"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publication", "resource_limit", "paths"],
+      "properties": {
+        "publication": {"const": "atomic_final_path"},
+        "resource_limit": {"const": "output_file_size_512_bytes"},
+        "paths": {"const": "basename_only"}
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenario", "elapsed_ns", "returncode", "output_absent", "publication_directory_entries", "transient_output_entries", "passed"],
+        "properties": {
+          "scenario": {"enum": ["sigint", "sigterm", "file_size_limit", "sigkill"]},
+          "elapsed_ns": {"type": "integer", "minimum": 1},
+          "returncode": {"type": "integer", "not": {"const": 0}},
+          "output_absent": {"const": true},
+          "publication_directory_entries": {
+            "type": "array",
+            "maxItems": 0,
+            "items": {"type": "string"}
+          },
+          "transient_output_entries": {
+            "type": "array",
+            "maxItems": 0,
+            "items": {"type": "string"}
+          },
+          "passed": {"const": true}
+        }
+      }
+    },
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

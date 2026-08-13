@@ -32,11 +32,6 @@
     "version": "0.3.1"
   },
   "diagnostic_codes": [
-    "VSS-ALT-TYPE-CONFLICT",
-    "VSS-ALT-TYPE-CONFLICT",
-    "VSS-ALT-TYPE-CONFLICT",
-    "VSS-ALT-TYPE-CONFLICT",
-    "VSS-ALT-TYPE-CONFLICT",
     "VSS-BND-ALT-TYPE-CONFLICT",
     "VSS-BND-ALT-TYPE-CONFLICT",
     "VSS-BND-ALT-TYPE-CONFLICT",
@@ -103,11 +98,10 @@
       "types": {
         "BND": 9,
         "DEL": 32,
-        "DUP": 4,
+        "DUP": 7,
         "INS": 44,
         "INV": 1,
-        "TRA": 5,
-        "UNKNOWN": 3
+        "UNKNOWN": 5
       }
     },
     "breakends": {
@@ -268,8 +262,31 @@
       "minimum": 0,
       "missing": 0,
       "n": 93,
-      "not_applicable": 0,
+      "not_applicable": 5,
       "policy_id": "vss-bins/1"
+    },
+    "merged_support": {
+      "declared_fields": [
+        "SUPP",
+        "SUPP_VEC"
+      ],
+      "interpretation": "merger_provenance_only",
+      "records_with_support": 98,
+      "records_without_support": 0,
+      "source_count_states": {
+        "6": 98
+      },
+      "status": "present",
+      "supporting_sources": {
+        "1": 45,
+        "2": 37,
+        "3": 9,
+        "4": 5,
+        "5": 2
+      },
+      "vector_count_consistency": {
+        "consistent": 98
+      }
     },
     "metric_contracts": {
       "alleles": {
@@ -313,6 +330,12 @@
         "denominator": "alleles_with_applicable_length",
         "scope": "alternate_allele",
         "unit": "base_pairs"
+      },
+      "merged_support": {
+        "comparability": "merger-support-provenance/1",
+        "denominator": "records_with_declared_merger_support",
+        "scope": "source_record",
+        "unit": "records"
       },
       "qual": {
         "comparability": "declared-qual/1",
@@ -377,11 +400,11 @@
         0,
         0
       ],
-      "invalid": 0,
+      "invalid": 22,
       "maximum": 322.0,
       "minimum": 0.0,
       "missing": 0,
-      "n": 98
+      "n": 76
     },
     "representations": {
       "breakend": 9,

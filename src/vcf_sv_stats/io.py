@@ -182,6 +182,30 @@ def open_variant(path: str | Path) -> pysam.VariantFile:
         raise InputError(f"Unable to open VCF/BCF input: {exc}") from exc
 
 
+def iter_record_texts(path: str | Path) -> Iterator[str]:
+    """Yield exact VCF records when textual, or HTSlib-rendered records for BCF."""
+    source = Path(path)
+    container = str(input_metadata(source)["container"])
+    if container == "bcf":
+        with open_variant(source) as variant:
+            for record in variant:
+                yield str(record).rstrip("\n")
+        return
+    try:
+        if container == "vcf.gz":
+            with gzip.open(source, "rt", encoding="utf-8", newline="") as handle:
+                for line in handle:
+                    if not line.startswith("#"):
+                        yield line.rstrip("\r\n")
+        else:
+            with source.open("rt", encoding="utf-8", newline="") as handle:
+                for line in handle:
+                    if not line.startswith("#"):
+                        yield line.rstrip("\r\n")
+    except (gzip.BadGzipFile, EOFError, OSError, UnicodeError) as exc:
+        raise InputError(f"Unable to read VCF record text safely: {exc}") from exc
+
+
 def assert_distinct_paths(input_path: str | Path, output_path: str | Path) -> None:
     source = Path(input_path)
     target = Path(output_path)

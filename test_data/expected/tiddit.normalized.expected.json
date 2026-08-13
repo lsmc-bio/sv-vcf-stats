@@ -32,6 +32,8 @@
     "version": "3.9.7"
   },
   "diagnostic_codes": [
+    "VSS-ALT-TYPE-CONFLICT",
+    "VSS-ALT-TYPE-CONFLICT",
     "VSS-BND-RELATIONSHIP-UNDECLARED"
   ],
   "fixture": "tiddit.normalized.hg002.subset.vcf.gz",
@@ -41,8 +43,8 @@
       "types": {
         "BND": 4,
         "DEL": 7,
-        "INV": 1,
-        "UNKNOWN": 2
+        "DUP": 2,
+        "INV": 1
       }
     },
     "breakends": {
@@ -202,8 +204,18 @@
       "minimum": 52,
       "missing": 0,
       "n": 10,
-      "not_applicable": 0,
+      "not_applicable": 4,
       "policy_id": "vss-bins/1"
+    },
+    "merged_support": {
+      "declared_fields": [],
+      "interpretation": "merger_provenance_only",
+      "records_with_support": 0,
+      "records_without_support": 0,
+      "source_count_states": {},
+      "status": "not_declared",
+      "supporting_sources": {},
+      "vector_count_consistency": {}
     },
     "metric_contracts": {
       "alleles": {
@@ -247,6 +259,12 @@
         "denominator": "alleles_with_applicable_length",
         "scope": "alternate_allele",
         "unit": "base_pairs"
+      },
+      "merged_support": {
+        "comparability": "merger-support-provenance/1",
+        "denominator": "records_with_declared_merger_support",
+        "scope": "source_record",
+        "unit": "records"
       },
       "qual": {
         "comparability": "declared-qual/1",

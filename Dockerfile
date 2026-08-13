@@ -2,8 +2,10 @@
 
 FROM python:3.11-slim AS build
 
+ARG SETUPTOOLS_SCM_PRETEND_VERSION=0.1.0.dev0
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    SETUPTOOLS_SCM_PRETEND_VERSION=${SETUPTOOLS_SCM_PRETEND_VERSION}
 WORKDIR /build
 COPY . /build
 RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels \
@@ -12,6 +14,13 @@ RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels \
 
 FROM debian:bookworm-slim
 
+ARG SETUPTOOLS_SCM_PRETEND_VERSION=0.1.0.dev0
+ARG SOURCE_COMMIT=unknown
+LABEL org.opencontainers.image.title="vcf-sv-stats" \
+    org.opencontainers.image.description="Standards-aware structural-variant and copy-number VCF statistics" \
+    org.opencontainers.image.version="${SETUPTOOLS_SCM_PRETEND_VERSION}" \
+    org.opencontainers.image.revision="${SOURCE_COMMIT}" \
+    org.opencontainers.image.licenses="Apache-2.0"
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

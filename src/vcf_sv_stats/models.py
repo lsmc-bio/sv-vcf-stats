@@ -54,6 +54,7 @@ class OperationRequest:
     regions_scan: bool = False
     max_input_bytes: int | None = None
     max_uncompressed_bytes: int | None = None
+    source_manifest: str | Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +197,8 @@ class DiscrepancyResult:
     counts: dict[str, int]
     complete: bool
     report_path: Path | None = None
+    source_comparisons: tuple[dict[str, Any], ...] = ()
+    source_evidence: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -203,6 +206,8 @@ class DiscrepancyResult:
             "counts": self.counts,
             "complete": self.complete,
             "report_path": None if self.report_path is None else str(self.report_path),
+            "source_comparisons": list(self.source_comparisons),
+            "source_evidence": self.source_evidence,
         }
 
 

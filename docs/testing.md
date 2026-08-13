@@ -107,7 +107,7 @@ Normalization tests cover:
 The invariant is stronger than “the command raised”: after any injected
 failure, there is either no final artifact set or the exact prior verified set.
 
-## Determinism and performance smoke
+## Determinism and performance qualification
 
 ```bash
 benchmark_dir=$(mktemp -d)
@@ -115,16 +115,30 @@ uv run python tools/benchmark_streaming.py \
   --input test_data/vcf/manta.native.hg002.subset.vcf.gz \
   --input test_data/vcf/sniffles2.native.hg002.subset.vcf.gz \
   --output "$benchmark_dir/result.json" \
-  --repetitions 3
+  --repetitions 3 \
+  --source-commit "$(git rev-parse HEAD)"
 ```
 
-The smoke harness records monotonic elapsed time, process peak RSS, throughput,
-record count, and canonical payload digest while exposing only input basenames.
-Repeated payload digests must match.
+The harness runs every sample in a fresh child process and records monotonic
+elapsed time, process peak RSS, temporary-disk peak, throughput, record count,
+canonical payload digest, and a minimal-reader baseline while exposing only
+input basenames. Repeated payload digests must match.
 
-This is not the outstanding large-callset qualification. Million- and
-ten-million-record scaling, signal interruption, and crash recovery remain an
-explicit pre-1.0 ledger failure rather than an implied claim.
+The committed [performance qualification](benchmarks/20260813_streaming_qualification.md)
+covers deterministic neutral inputs from 100,000 through 10,000,000 records,
+multi-sample and long-contig cases, fixed-worker digest parity, approximately
+linear temporary storage, bounded RSS, and interruption recovery for `SIGINT`,
+`SIGTERM`, file-size exhaustion, and untrappable termination. Its JSON receipts
+validate against embedded schemas and bind the exact implementation commit.
+
+## Distribution qualification
+
+The [distribution guide](distribution.md) defines the supported OS,
+architecture, Python, archive, Conda, OCI, and Apptainer matrix. The dedicated
+workflow installs wheel and source-archive candidates without package-index
+access, runs the self-contained install verifier, reconciles 24 receipts,
+audits both OCI architectures and attestations, and produces SBOM, checksum,
+license, and provenance evidence. Qualification never publishes an artifact.
 
 ## Package reproducibility
 

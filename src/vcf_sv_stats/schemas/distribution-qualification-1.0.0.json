@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:distribution-qualification:1.0.0",
+  "title": "vcf-sv-stats distribution qualification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "target_spec_sha256", "tool_version", "semantic_sha256", "case_count", "cases", "wheel_sdist_parity", "all_supported_targets_passed", "receipt_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.distribution-qualification"},
+    "schema_version": {"const": "1.0.0"},
+    "target_spec_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "case_count": {"const": 24},
+    "cases": {
+      "type": "array",
+      "minItems": 24,
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "runner", "python", "channel", "receipt_name", "receipt_sha256", "passed"],
+        "properties": {
+          "target": {"enum": ["linux-x86_64", "linux-arm64", "macos-arm64", "macos-x86_64"]},
+          "runner": {"enum": ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15", "macos-15-intel"]},
+          "python": {"enum": ["3.11", "3.12", "3.13"]},
+          "channel": {"enum": ["wheel", "sdist"]},
+          "receipt_name": {"type": "string", "pattern": "^[^/\\\\]+\\.json$"},
+          "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "passed": {"const": true}
+        }
+      }
+    },
+    "wheel_sdist_parity": {"const": true},
+    "all_supported_targets_passed": {"const": true},
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

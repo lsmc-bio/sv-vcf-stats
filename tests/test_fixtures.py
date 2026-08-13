@@ -87,3 +87,25 @@ def test_plain_compressed_and_bcf_semantic_parity() -> None:
     assert stats(OperationRequest(source)).summary["statistics"] == stats(
         OperationRequest(bcf)
     ).summary["statistics"]
+
+
+def test_merged_support_is_provenance_with_fixture_relative_counts() -> None:
+    expected_counts = {
+        "jasmine.merged": {"1": 83, "2": 12, "3": 5},
+        "survivor.merged": {"1": 65, "2": 26, "3": 5, "4": 1, "5": 3},
+    }
+    for fixture_id, counts in expected_counts.items():
+        statistics = json.loads(
+            (ROOT / "expected" / f"{fixture_id}.expected.json").read_text()
+        )["statistics"]
+        support = statistics["merged_support"]
+        assert support == {
+            "declared_fields": ["SUPP", "SUPP_VEC"],
+            "interpretation": "merger_provenance_only",
+            "records_with_support": 100,
+            "records_without_support": 0,
+            "source_count_states": {"6": 100},
+            "status": "present",
+            "supporting_sources": counts,
+            "vector_count_consistency": {"consistent": 100},
+        }

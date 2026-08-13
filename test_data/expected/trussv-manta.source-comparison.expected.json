@@ -1,0 +1,22 @@
+{
+  "schema_name": "vcf-sv-stats.source-comparison-golden",
+  "schema_version": "1.0.0",
+  "subject": "HG002",
+  "combined_fixture_id": "trussv.merged",
+  "source_fixture_ids": ["manta.native"],
+  "comparison_count": 100,
+  "source_count": 1,
+  "source_order": ["manta"],
+  "status_counts": {
+    "not_found": 99,
+    "not_preserved": 1
+  },
+  "preserved_dimension_counts": {
+    "allele": 1,
+    "endpoint": 1,
+    "record_id": 0,
+    "relationships": 1
+  },
+  "safe_reinsertion_proposed": false,
+  "normalization_authority": "comparison_only"
+}

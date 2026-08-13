@@ -1,0 +1,12 @@
+{
+  "schema_name": "vcf-sv-stats.supported-targets",
+  "schema_version": "1.0.0",
+  "python_versions": ["3.11", "3.12", "3.13"],
+  "targets": [
+    {"id": "linux-x86_64", "operating_system": "Linux", "machine": "x86_64", "runner": "ubuntu-24.04"},
+    {"id": "linux-arm64", "operating_system": "Linux", "machine": "aarch64", "runner": "ubuntu-24.04-arm"},
+    {"id": "macos-arm64", "operating_system": "Darwin", "machine": "arm64", "runner": "macos-15"},
+    {"id": "macos-x86_64", "operating_system": "Darwin", "machine": "x86_64", "runner": "macos-15-intel"}
+  ],
+  "installation_channels": ["wheel", "sdist"]
+}

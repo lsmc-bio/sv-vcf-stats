@@ -11,6 +11,29 @@
     "input": {"type": "object"},
     "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
     "diagnostics": {"type": "array", "items": {"type": "object"}},
-    "complete": {"type": "boolean"}
+    "complete": {"type": "boolean"},
+    "source_evidence": {"type": ["object", "null"]},
+    "source_comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_label", "source_sha256", "source_record_key", "source_record_ordinal", "source_allele_ordinal", "combined_record_key", "status", "dimensions", "evidence", "source_relationship_available", "merged_relationship_preserved", "safe_reinsertion"],
+        "properties": {
+          "source_label": {"type": "string"},
+          "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "source_record_key": {"type": "string"},
+          "source_record_ordinal": {"type": "integer", "minimum": 1},
+          "source_allele_ordinal": {"type": "integer", "minimum": 1},
+          "combined_record_key": {"type": ["string", "null"]},
+          "status": {"enum": ["preserved", "changed_with_declared_rule", "not_preserved", "not_found", "ambiguous"]},
+          "dimensions": {"type": "object"},
+          "evidence": {"type": "object"},
+          "source_relationship_available": {"type": "boolean"},
+          "merged_relationship_preserved": {"type": "boolean"},
+          "safe_reinsertion": {"const": false}
+        }
+      }
+    }
   }
 }

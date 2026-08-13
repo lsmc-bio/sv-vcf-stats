@@ -38,10 +38,9 @@
       "types": {
         "BND": 4,
         "DEL": 45,
-        "DUP": 1,
+        "DUP": 4,
         "INS": 43,
-        "INV": 4,
-        "UNKNOWN": 3
+        "INV": 4
       }
     },
     "breakends": {
@@ -203,8 +202,18 @@
       "minimum": 1,
       "missing": 1,
       "n": 95,
-      "not_applicable": 0,
+      "not_applicable": 4,
       "policy_id": "vss-bins/1"
+    },
+    "merged_support": {
+      "declared_fields": [],
+      "interpretation": "merger_provenance_only",
+      "records_with_support": 0,
+      "records_without_support": 0,
+      "source_count_states": {},
+      "status": "not_declared",
+      "supporting_sources": {},
+      "vector_count_consistency": {}
     },
     "metric_contracts": {
       "alleles": {
@@ -248,6 +257,12 @@
         "denominator": "alleles_with_applicable_length",
         "scope": "alternate_allele",
         "unit": "base_pairs"
+      },
+      "merged_support": {
+        "comparability": "merger-support-provenance/1",
+        "denominator": "records_with_declared_merger_support",
+        "scope": "source_record",
+        "unit": "records"
       },
       "qual": {
         "comparability": "declared-qual/1",

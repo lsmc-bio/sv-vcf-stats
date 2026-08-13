@@ -74,6 +74,7 @@ normalize.
 | `length_bp` | Applicable ALT alleles | Missing and not-applicable are not zero |
 | `filters` | Source rows | Multiple filter labels can coexist |
 | `qual` | Source rows with declared QUAL | Uses a separately labeled distribution |
+| `merged_support` | Merged ALT alleles | Provenance support only; not concordance or truth |
 
 ## Histograms
 
@@ -152,7 +153,23 @@ The transform manifest binds:
 - one source-to-output mapping per emitted record.
 
 For the conservative profile, input, output, and mapping cardinalities match.
-The mapping list is provenance, not permission to infer a missing relationship.
+For canonical VCF 4.5 output, one source row may map to multiple split output
+rows; every mapping records source record and allele ordinals, output ID, and
+the lossless transform class. The mapping list is provenance, not permission to
+infer a missing relationship.
+
+## Source-manifest comparison
+
+An optional `vcf-sv-stats.source-manifest` binds a merged input to explicit
+local source files by SHA-256, adapter URN, and source role. The comparator
+matches source observations to merged support evidence and reports exactly one
+of `preserved`, `not_preserved`, `not_found`, or `ambiguous`; counts reconcile
+to exhaustive per-observation results. It never infers identity from filenames,
+opens a remote resource, or proposes absent evidence for reinsertion.
+
+A source manifest is required before canonical rewriting of a merger-produced
+callset. Unsafe, ambiguous, digest-mismatched, aliased, or incomplete source
+evidence blocks that rewrite.
 
 ## Receipt
 

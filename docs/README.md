@@ -28,6 +28,8 @@ module. Start with the question you are trying to answer.
 | Question | Document |
 |---|---|
 | Which checks should I run? | [Testing guide](testing.md) |
+| What performance claims have executable evidence? | [Performance qualification](benchmarks/20260813_streaming_qualification.md) |
+| Which installation targets and artifact proofs are required? | [Distribution guide](distribution.md) |
 | How were the HG002 fixtures selected and sanitized? | [Fixture governance](fixture-governance.md) |
 | Which acceptance criteria are complete? | [Implementation ledger](plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) |
 | What contribution rules apply? | [Contributing guide](../CONTRIBUTING.md) |
@@ -56,8 +58,9 @@ relative links to current implementation behavior.
 - **Provisional** means detection and diagnostics exist but rewrite is disabled.
 - **Unsupported** means the identity is known but no native fixture has passed
   the support gate.
-- **Pre-1.0 target** means a requirement is normative for v1 but may still have
-  a non-success terminal row in the ledger.
+- **Pre-1.0 candidate** means the implementation target is complete but release,
+  publication, public visibility, and a stable version tag remain separately
+  controlled actions.
 
 ## Documentation checks
 

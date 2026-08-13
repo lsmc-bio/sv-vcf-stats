@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -13,12 +13,19 @@ from .events import EventStore
 from .exceptions import InputError
 from .io import (
     has_variant_index,
+    iter_record_texts,
     materialize_input,
     open_variant,
     parse_regions,
     record_in_regions,
 )
 from .models import CanonicalObservation, Diagnostic, Fixability, OperationRequest, Severity
+from .vcf45 import (
+    PhaseEvidenceStore,
+    parse_header_contract,
+    validate_header_contract,
+    validate_record_text,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,8 +69,8 @@ def classify_allele(record: Any, alt: str, allele_index: int) -> tuple[str, str]
     if alt.startswith(".") or alt.endswith("."):
         return "SINGLE_BND", "single_breakend"
     if alt.startswith("<") and alt.endswith(">"):
-        symbolic = alt[1:-1].upper()
-        if symbolic in {"DEL", "DUP", "INS", "INV", "CNV", "BND", "TRA"}:
+        symbolic = alt[1:-1].split(":", 1)[0]
+        if symbolic in {"DEL", "DUP", "INS", "INV", "CNV"}:
             return symbolic, "symbolic"
         if symbolic in {"NON_REF", "*"}:
             return "NON_SV", "symbolic"
@@ -98,43 +105,72 @@ def allele_length(record: Any, alt: str, allele_index: int, variant_type: str) -
     return None
 
 
-def _histogram(lengths: list[int]) -> dict[str, Any]:
-    counts: list[int] = []
-    for lower, upper in LENGTH_BINS:
-        counts.append(
-            sum(1 for value in lengths if value >= lower and (upper is None or value < upper))
-        )
-    return {
-        "policy_id": "vss-bins/1",
-        "boundaries": [[lower, upper] for lower, upper in LENGTH_BINS],
-        "counts": counts,
-        "n": len(lengths),
-        "minimum": min(lengths) if lengths else None,
-        "maximum": max(lengths) if lengths else None,
-        "missing": 0,
-        "invalid": 0,
-        "not_applicable": 0,
-    }
+@dataclass(slots=True)
+class HistogramAccumulator:
+    """Accumulate a fixed histogram without retaining source values."""
 
+    boundaries: tuple[tuple[int | float, int | float | None], ...]
+    counts: list[int] = field(init=False)
+    n: int = 0
+    minimum: int | float | None = None
+    maximum: int | float | None = None
 
-def _numeric_histogram(values: list[float], boundaries: tuple[float, ...]) -> dict[str, Any]:
-    counts = [0 for _ in boundaries]
-    for value in values:
-        for index, lower in enumerate(boundaries):
-            upper = boundaries[index + 1] if index + 1 < len(boundaries) else None
+    def __post_init__(self) -> None:
+        if not self.boundaries:
+            raise ValueError("Histogram boundaries must not be empty")
+        self.counts = [0 for _ in self.boundaries]
+
+    def add(self, value: int | float) -> None:
+        for index, (lower, upper) in enumerate(self.boundaries):
             if value >= lower and (upper is None or value < upper):
-                counts[index] += 1
-                break
-    return {
-        "boundaries": [
-            [lower, boundaries[index + 1] if index + 1 < len(boundaries) else None]
-            for index, lower in enumerate(boundaries)
-        ],
-        "counts": counts,
-        "n": len(values),
-        "minimum": min(values) if values else None,
-        "maximum": max(values) if values else None,
-    }
+                self.counts[index] += 1
+                self.n += 1
+                self.minimum = value if self.minimum is None else min(self.minimum, value)
+                self.maximum = value if self.maximum is None else max(self.maximum, value)
+                return
+        raise ValueError(f"Histogram value is outside declared boundaries: {value}")
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "boundaries": [[lower, upper] for lower, upper in self.boundaries],
+            "counts": list(self.counts),
+            "n": self.n,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+        }
+
+
+def _numeric_boundaries(
+    values: tuple[int | float, ...],
+) -> tuple[tuple[int | float, int | float | None], ...]:
+    return tuple(
+        (lower, values[index + 1] if index + 1 < len(values) else None)
+        for index, lower in enumerate(values)
+    )
+
+
+def _support_scalar(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return value[0] if value else None
+    return value
+
+
+def _support_count(value: Any) -> int | None:
+    scalar = _support_scalar(value)
+    if isinstance(scalar, bool):
+        return None
+    if isinstance(scalar, int) and scalar >= 0:
+        return scalar
+    if isinstance(scalar, str) and scalar.isdigit():
+        return int(scalar)
+    return None
+
+
+def _support_vector(value: Any) -> str | None:
+    scalar = _support_scalar(value)
+    if not isinstance(scalar, str) or not scalar or set(scalar) - {"0", "1"}:
+        return None
+    return scalar
 
 
 def _raw_filter_state(record: Any) -> tuple[str, tuple[str, ...]]:
@@ -212,19 +248,33 @@ def scan_variant(
     non_sv_records = 0
     multiallelic = 0
     missing_qual = 0
+    invalid_qual = 0
     type_counts: Counter[str] = Counter()
     representation_counts: Counter[str] = Counter()
     filter_counts: Counter[str] = Counter()
     genotype_counts: Counter[str] = Counter()
     copy_number_counts: Counter[str] = Counter()
     cnv_genotype_states: Counter[str] = Counter()
-    lengths: list[int] = []
-    qual_values: list[float] = []
-    copy_number_quality_values: list[float] = []
+    length_histogram = HistogramAccumulator(LENGTH_BINS)
+    qual_histogram = HistogramAccumulator(
+        _numeric_boundaries((0, 10, 20, 30, 50, 100, 200, 500, 1_000))
+    )
+    copy_number_quality_histogram = HistogramAccumulator(
+        _numeric_boundaries((0, 10, 20, 30, 50, 100, 200, 500, 1_000))
+    )
     length_missing = 0
+    copy_number_quality_missing = 0
+    copy_number_quality_invalid = 0
     simple_events = 0
+    support_declared_fields: tuple[str, ...] = ()
+    support_records_with_values = 0
+    support_records_without_values = 0
+    support_count_counts: Counter[str] = Counter()
+    support_source_count_states: Counter[str] = Counter()
+    support_consistency: Counter[str] = Counter()
     parsed_regions = parse_regions(regions)
     complete = not parsed_regions
+    stopped_early = False
 
     try:
         variant = open_variant(path)
@@ -233,6 +283,10 @@ def scan_variant(
             raise InputError("Regional operation requires an index or explicit regions_scan")
         samples = tuple(variant.header.samples)
         header_text = str(variant.header)
+        header_contract = parse_header_contract(header_text)
+        support_declared_fields = tuple(
+            field_name for field_name in ("SUPP", "SUPP_VEC") if field_name in variant.header.info
+        )
         header = {
             "vcf_version": str(variant.header.version),
             "samples": list(samples),
@@ -243,6 +297,8 @@ def scan_variant(
             "filter_fields": sorted(variant.header.filters),
             "text": header_text,
         }
+        diagnostics.extend(validate_header_contract(header_contract, adapter_id=adapter_id))
+        exact_record_texts = iter(iter_record_texts(path)) if header_contract.is_v45 else None
         reserved_expectations = {
             "GQ": (variant.header.formats, "Integer", None),
             "PS": (variant.header.formats, "Integer", None),
@@ -272,14 +328,26 @@ def scan_variant(
                         adapter_id=adapter_id,
                     )
                 )
-        with variant, EventStore(temp_dir) as events:
+        with variant, EventStore(temp_dir) as events, PhaseEvidenceStore(
+            temp_dir, adapter_id=adapter_id
+        ) as phases:
             for source_ordinal, record in enumerate(variant, start=1):
+                if exact_record_texts is None:
+                    record_text = str(record)
+                else:
+                    try:
+                        record_text = next(exact_record_texts)
+                    except StopIteration as exc:
+                        raise InputError(
+                            "VCF record text and parser streams have different cardinality"
+                        ) from exc
                 if not record_in_regions(record, parsed_regions):
                     continue
                 record_count += 1
                 if max_records is not None and record_count > max_records:
                     record_count -= 1
                     complete = False
+                    stopped_early = True
                     break
                 alts = tuple(record.alts or ())
                 if len(alts) > 1:
@@ -287,7 +355,21 @@ def scan_variant(
                 if record.qual is None:
                     missing_qual += 1
                 else:
-                    qual_values.append(float(record.qual))
+                    qual = float(record.qual)
+                    if math.isfinite(qual) and qual >= 0:
+                        qual_histogram.add(qual)
+                    else:
+                        invalid_qual += 1
+                if header_contract.is_v45:
+                    phases.add(record_text, ordinal=source_ordinal)
+                diagnostics.extend(
+                    validate_record_text(
+                        record_text,
+                        ordinal=source_ordinal,
+                        contract=header_contract,
+                        adapter_id=adapter_id,
+                    )
+                )
                 filter_state, filter_keys = _raw_filter_state(record)
                 if filter_state == "missing":
                     filter_counts["missing"] += 1
@@ -299,13 +381,40 @@ def scan_variant(
                     filter_counts["filtered_any"] += 1
                     filter_counts.update(filter_keys)
 
-                raw_info = str(record).split("\t", 8)[7]
+                raw_info = record_text.split("\t", 8)[7]
                 raw_values = {
                     item.partition("=")[0]: item.partition("=")[2]
                     for item in raw_info.split(";")
                     if "=" in item
                 }
+                if support_declared_fields:
+                    declared_count = _support_count(
+                        record.info.get("SUPP") if "SUPP" in record.info else None
+                    )
+                    vector = _support_vector(
+                        record.info.get("SUPP_VEC") if "SUPP_VEC" in record.info else None
+                    )
+                    if declared_count is None and vector is None:
+                        support_records_without_values += 1
+                    else:
+                        support_records_with_values += 1
+                        vector_count = vector.count("1") if vector is not None else None
+                        effective_count = (
+                            declared_count if declared_count is not None else vector_count
+                        )
+                        if effective_count is not None:
+                            support_count_counts[str(effective_count)] += 1
+                        if vector is not None:
+                            support_source_count_states[str(len(vector))] += 1
+                        if declared_count is not None and vector_count is not None:
+                            support_consistency[
+                                "consistent" if declared_count == vector_count else "inconsistent"
+                            ] += 1
+                        else:
+                            support_consistency["uncheckable"] += 1
                 for field_name, raw_value in raw_values.items():
+                    if header_contract.is_v45:
+                        continue
                     if field_name not in variant.header.info:
                         continue
                     number = variant.header.info[field_name].number
@@ -398,7 +507,7 @@ def scan_variant(
                             )
                     length = allele_length(record, alt, allele_index, variant_type)
                     if length is not None:
-                        lengths.append(length)
+                        length_histogram.add(length)
                     elif variant_type not in {"BND", "SINGLE_BND", "TRA", "NON_SV"}:
                         length_missing += 1
                 if not record_has_sv:
@@ -452,10 +561,16 @@ def scan_variant(
                     else:
                         copy_number_counts["invalid"] += 1
                     copy_number_quality = call.get("CNQ")
-                    if isinstance(copy_number_quality, (int, float)) and math.isfinite(
-                        copy_number_quality
+                    if copy_number_quality is None:
+                        copy_number_quality_missing += 1
+                    elif (
+                        isinstance(copy_number_quality, (int, float))
+                        and math.isfinite(copy_number_quality)
+                        and copy_number_quality >= 0
                     ):
-                        copy_number_quality_values.append(float(copy_number_quality))
+                        copy_number_quality_histogram.add(float(copy_number_quality))
+                    else:
+                        copy_number_quality_invalid += 1
                 if record_has_cnv:
                     if "alternate" in record_genotype_states:
                         cnv_genotype_states["alternate"] += 1
@@ -466,7 +581,18 @@ def scan_variant(
                     else:
                         cnv_genotype_states["unresolved"] += 1
 
+            if exact_record_texts is not None and not stopped_early:
+                try:
+                    next(exact_record_texts)
+                except StopIteration:
+                    pass
+                else:
+                    raise InputError(
+                        "VCF record text and parser streams have different cardinality"
+                    )
             graph = events.summarize()
+            if header_contract.is_v45:
+                diagnostics.extend(phases.diagnostics())
     except (OSError, ValueError, KeyError) as exc:
         raise InputError(f"VCF/BCF parsing failed: {exc}") from exc
 
@@ -560,6 +686,12 @@ def scan_variant(
                 "unit": "base_pairs",
                 "comparability": "vss-bins/1",
             },
+            "merged_support": {
+                "scope": "source_record",
+                "denominator": "records_with_declared_merger_support",
+                "unit": "records",
+                "comparability": "merger-support-provenance/1",
+            },
             "qual": {
                 "scope": "source_record",
                 "denominator": "all_parsed_source_records",
@@ -590,20 +722,39 @@ def scan_variant(
             "unresolved_mate_references": graph["unresolved_mate_references"],
         },
         "events": {"resolved": graph["resolved_events"] + simple_events},
-        "length_bp": {**_histogram(lengths), "missing": length_missing},
-        "qual": {
-            **_numeric_histogram(qual_values, (0, 10, 20, 30, 50, 100, 200, 500, 1_000)),
-            "missing": missing_qual,
+        "length_bp": {
+            "policy_id": "vss-bins/1",
+            **length_histogram.as_dict(),
+            "missing": length_missing,
             "invalid": 0,
+            "not_applicable": max(0, allele_count - length_histogram.n - length_missing),
+        },
+        "qual": {
+            **qual_histogram.as_dict(),
+            "missing": missing_qual,
+            "invalid": invalid_qual,
         },
         "copy_number": dict(sorted(copy_number_counts.items())),
         "copy_number_quality": {
-            **_numeric_histogram(
-                copy_number_quality_values,
-                (0, 10, 20, 30, 50, 100, 200, 500, 1_000),
+            **copy_number_quality_histogram.as_dict(),
+            "missing": copy_number_quality_missing,
+            "invalid": copy_number_quality_invalid,
+        },
+        "merged_support": {
+            "status": (
+                "present"
+                if support_records_with_values
+                else "declared_without_values"
+                if support_declared_fields
+                else "not_declared"
             ),
-            "missing": max(0, record_count * len(samples) - len(copy_number_quality_values)),
-            "invalid": 0,
+            "declared_fields": list(support_declared_fields),
+            "records_with_support": support_records_with_values,
+            "records_without_support": support_records_without_values,
+            "supporting_sources": dict(sorted(support_count_counts.items())),
+            "source_count_states": dict(sorted(support_source_count_states.items())),
+            "vector_count_consistency": dict(sorted(support_consistency.items())),
+            "interpretation": "merger_provenance_only",
         },
         "copy_number_interpretation": {
             "baseline_status": "unavailable",

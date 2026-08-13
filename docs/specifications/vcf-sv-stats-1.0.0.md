@@ -189,7 +189,7 @@ raw sources never enter Git. The manifest binds source and fixture digests,
 counts, behavior classes, sanitization version, identity evidence, and
 redistribution review.
 
-The repository remains private and versions remain pre-1.0 while required
-acceptance rows are incomplete. Public visibility, package or container
-publication, an upstream module contribution, and the annotated `1.0.0` tag
-each require explicit later approval.
+The repository remains private and versions remain pre-1.0 until an explicitly
+approved release action. Public visibility, package or container publication,
+upstream merge, and the annotated `1.0.0` tag are independent gates. Preparing
+an upstream contribution for review does not authorize any of those actions.
