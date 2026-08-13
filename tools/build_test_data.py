@@ -25,8 +25,10 @@ import pysam
 import pysam.bcftools
 
 from vcf_sv_stats.engine import stats
+from vcf_sv_stats.fixture_review import PENDING_REDISTRIBUTION_STATUS, apply_review, load_review
 from vcf_sv_stats.models import OperationRequest
 from vcf_sv_stats.serialization import file_sha256, json_bytes
+from vcf_sv_stats.sources import compare_sources
 
 SUBJECT = "HG002"
 SANITIZATION_VERSION = "fixture-sanitizer/1"
@@ -65,7 +67,6 @@ class SourceSpec:
     relative_path: str
     fixture_name: str
     source_signature: str
-    redistribution_status: str = "reviewed-public-derived-data"
 
 
 SOURCES: tuple[SourceSpec, ...] = (
@@ -568,6 +569,101 @@ def _build_bcf(source: Path, destination: Path) -> Path:
     return index
 
 
+def _write_source_comparison_artifacts(stage: Path, expected_dir: Path) -> None:
+    vcf_dir = stage / "vcf"
+    manifest_dir = stage / "source_manifests"
+    manifest_dir.mkdir(exist_ok=True)
+    combined = vcf_dir / "trussv.merged.hg002.subset.vcf.gz"
+    source = vcf_dir / "manta.native.hg002.subset.vcf.gz"
+    source_index = Path(str(source) + ".tbi")
+    source_manifest = {
+        "schema_name": "vcf-sv-stats.source-manifest",
+        "schema_version": "1.0.0",
+        "combined_sha256": file_sha256(combined),
+        "sources": [
+            {
+                "producer_label": "manta",
+                "path": "../vcf/manta.native.hg002.subset.vcf.gz",
+                "display_name": source.name,
+                "sha256": file_sha256(source),
+                "artifact_role": "caller_native",
+                "adapter_id": "urn:vcf-sv-stats:adapter:manta:1",
+                "record_namespace": "manta-native-hg002",
+                "index": {
+                    "path": "../vcf/manta.native.hg002.subset.vcf.gz.tbi",
+                    "display_name": source_index.name,
+                    "sha256": file_sha256(source_index),
+                },
+                "merger_provenance": {
+                    "support_ordinal": 0,
+                    "source_id_fields": ["IDLIST"],
+                    "relationship_fields": ["MATEID", "EVENT"],
+                },
+            }
+        ],
+    }
+    source_manifest_path = manifest_dir / "trussv-manta.source-manifest.json"
+    source_manifest_path.write_bytes(json_bytes(source_manifest))
+    comparisons, evidence = compare_sources(combined, source_manifest_path)
+    dimension_counts = {
+        key: sum(int(item["dimensions"][key]) for item in comparisons)
+        for key in ("allele", "endpoint", "record_id", "relationships")
+    }
+    comparison_golden = {
+        "schema_name": "vcf-sv-stats.source-comparison-golden",
+        "schema_version": "1.0.0",
+        "subject": SUBJECT,
+        "combined_fixture_id": "trussv.merged",
+        "source_fixture_ids": ["manta.native"],
+        "comparison_count": evidence["comparison_count"],
+        "source_count": evidence["source_count"],
+        "source_order": evidence["source_order"],
+        "status_counts": evidence["status_counts"],
+        "preserved_dimension_counts": dimension_counts,
+        "safe_reinsertion_proposed": evidence["safe_reinsertion_proposed"],
+        "normalization_authority": evidence["normalization_authority"],
+    }
+    (expected_dir / "trussv-manta.source-comparison.expected.json").write_bytes(
+        json_bytes(comparison_golden)
+    )
+
+
+def _fixture_notice() -> str:
+    return (
+        "# Fixture notice\n\n"
+        "These deterministic, heavily subsampled fixtures contain public HG002 "
+        "Genome in a Bottle data on GRCh38 coordinates. The source data are made "
+        "available by the National Institute of Standards and Technology Genome "
+        "in a Bottle program. Caller signatures identify Manta 1.6.0, TIDDIT 3.9.7, "
+        "dysgu 1.8.0, Sniffles2 2.8.0, Sentieon 202503.03, Jasmine 1.1.5, "
+        "SURVIVOR 1.0.6, OctopuSV 0.4.1, and TrusSV 0.3.1 outputs. No original "
+        "source VCF is redistributed.\n\n"
+        "Each manifest entry records the fixture-level redistribution decision. The\n"
+        "fixtures contain factual public-subject observations and factual\n"
+        "producer/version attribution, not caller source code or binaries. Caller\n"
+        "software remains subject to its own license. The fixture corpus was\n"
+        "eligible for a reviewed disposition only when its exact manifest digest\n"
+        "matches an explicitly supplied redistribution-review policy; publication\n"
+        "remains a separately approved gate.\n"
+    )
+
+
+def _auxiliary_artifacts(stage: Path) -> list[dict[str, str]]:
+    paths_and_roles = [
+        *((path, "expected_output") for path in (stage / "expected").iterdir()),
+        *((path, "source_manifest") for path in (stage / "source_manifests").iterdir()),
+        (stage / "NOTICE.md", "fixture_notice"),
+    ]
+    return [
+        {
+            "artifact_role": role,
+            "path": str(path.relative_to(stage)),
+            "sha256": file_sha256(path),
+        }
+        for path, role in sorted(paths_and_roles, key=lambda item: str(item[0]))
+    ]
+
+
 def _verify_subject_tokens(root: Path) -> None:
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.suffix in {".tbi", ".csi", ".bcf"}:
@@ -589,7 +685,11 @@ def _plain_query_source(source_dir: Path) -> Path:
     return source_dir / "vcfs/truari/query.del-ins-ge50.in-truth-bed.vcf"
 
 
-def build(source_dir: Path, output_dir: Path) -> None:
+def build(
+    source_dir: Path,
+    output_dir: Path,
+    redistribution_review: Path | None = None,
+) -> None:
     if not source_dir.is_dir():
         raise ValueError(f"Source directory does not exist: {source_dir}")
     if output_dir.exists():
@@ -597,8 +697,6 @@ def build(source_dir: Path, output_dir: Path) -> None:
     for spec in SOURCES:
         if not (source_dir / spec.relative_path).is_file():
             raise ValueError(f"Required source VCF is missing: {spec.relative_path}")
-        if not spec.redistribution_status.startswith("reviewed-"):
-            raise ValueError(f"Redistribution review is incomplete: {spec.fixture_name}")
 
     stage = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.stage.", dir=output_dir.parent))
     try:
@@ -665,7 +763,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_path": str(compressed.relative_to(stage)),
                     "fixture_sha256": file_sha256(compressed),
                     "index_sha256": file_sha256(index),
-                    "redistribution_status": spec.redistribution_status,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 }
             )
 
@@ -683,7 +781,9 @@ def build(source_dir: Path, output_dir: Path) -> None:
             for entry in manifest_entries
             if entry["fixture_id"] == "truvari.query"
         )
-        manifest = {
+        _write_source_comparison_artifacts(stage, expected_dir)
+        (stage / "NOTICE.md").write_text(_fixture_notice(), encoding="utf-8")
+        manifest: dict[str, Any] = {
             "schema_name": "vcf-sv-stats.fixture-manifest",
             "schema_version": "1.0.0",
             "subject": SUBJECT,
@@ -694,6 +794,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                 "method": "deterministic behavior set-cover plus coordinate-order quantiles",
             },
             "source_identity_evidence": source_identity_evidence,
+            "auxiliary_artifacts": _auxiliary_artifacts(stage),
             "fixtures": manifest_entries,
             "derived_parity_artifacts": [
                 {
@@ -703,6 +804,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": parity_record_count,
                     "derived_from": parity_source.name,
                     "subject": SUBJECT,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 },
                 {
                     "fixture_path": str(query_plain.relative_to(stage)),
@@ -710,6 +812,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": query_record_count,
                     "derived_from": "truvari.query.hg002.subset.vcf.gz",
                     "subject": SUBJECT,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 },
             ],
             "totals": {
@@ -719,22 +822,10 @@ def build(source_dir: Path, output_dir: Path) -> None:
                 ),
             },
         }
+        if redistribution_review is not None:
+            apply_review(manifest, load_review(redistribution_review))
+            shutil.copyfile(redistribution_review, stage / "redistribution-review.json")
         (stage / "manifest.json").write_bytes(json_bytes(manifest))
-        (stage / "NOTICE.md").write_text(
-            "# Fixture notice\n\n"
-            "These deterministic, heavily subsampled fixtures contain public HG002 "
-            "Genome in a Bottle data on GRCh38 coordinates. The source data are made "
-            "available by the National Institute of Standards and Technology Genome "
-            "in a Bottle program. Caller signatures identify Manta 1.6.0, TIDDIT 3.9.7, "
-            "dysgu 1.8.0, Sniffles2 2.8.0, Sentieon 202503.03, Jasmine 1.1.5, "
-            "SURVIVOR 1.0.6, OctopuSV 0.4.1, and TrusSV 0.3.1 outputs. No original "
-            "source VCF is redistributed.\n\n"
-            "Each manifest entry records the fixture-level redistribution decision. The\n"
-            "fixtures contain factual public-subject observations and factual\n"
-            "producer/version attribution, not caller source code or binaries. Caller\n"
-            "software remains subject to its own license.\n",
-            encoding="utf-8",
-        )
         if corpus_records > MAX_CORPUS_RECORDS:
             raise ValueError(f"Fixture corpus exceeds {MAX_CORPUS_RECORDS} records")
         if manifest["totals"]["compressed_vcf_bytes"] > MAX_COMPRESSED_BYTES:
@@ -750,8 +841,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--redistribution-review", type=Path)
     args = parser.parse_args()
-    build(args.source_dir.resolve(strict=True), args.output_dir.resolve(strict=False))
+    review = (
+        args.redistribution_review.resolve(strict=True)
+        if args.redistribution_review is not None
+        else None
+    )
+    build(
+        args.source_dir.resolve(strict=True),
+        args.output_dir.resolve(strict=False),
+        review,
+    )
 
 
 if __name__ == "__main__":

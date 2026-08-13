@@ -17,11 +17,30 @@ or unsanitized headers. A useful minimal report contains:
 - expected and observed behavior;
 - security impact without exploit data that exposes a real subject.
 
+## Visibility-transition gate
+
+The authenticated private-vulnerability-reporting status endpoint returned
+`404` while this repository was non-public on 2026-08-13. That is the current
+platform boundary, not evidence that reporting is enabled.
+
+Immediately after an explicitly approved public-visibility change, an
+administrator must enable the feature and read it back before any tag, package,
+image, release, or announcement:
+
+```bash
+gh api --method PUT repos/OWNER/REPOSITORY/private-vulnerability-reporting
+gh api repos/OWNER/REPOSITORY/private-vulnerability-reporting --jq '.enabled'
+```
+
+The second command must return `true`. A failed or unavailable read-back blocks
+the release; a public issue is not an acceptable substitute for a confidential
+reporting path.
+
 ## Supported versions
 
-Published release notes will list supported versions. During pre-1.0
-development, only the current default branch receives security fixes. No
-pre-1.0 artifact should be treated as a long-term-supported release.
+Published release notes will list supported versions. Until the first public
+release, only the current default branch receives security fixes. Candidate
+artifacts should not be treated as long-term-supported releases.
 
 ## Security-relevant boundaries
 

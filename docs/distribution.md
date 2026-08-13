@@ -1,8 +1,9 @@
 # Distribution qualification
 
-`vcf-sv-stats` is a private pre-1.0 candidate. This guide defines how a
-candidate proves installability and supply-chain evidence without publishing a
-package, container, Conda artifact, or release.
+`vcf-sv-stats` is a 1.0 public-release candidate under non-public
+qualification. This guide defines how a candidate proves installability and
+supply-chain evidence without changing repository visibility or publishing a
+package, container, or Conda artifact to a registry.
 
 ## Supported target contract
 
@@ -85,10 +86,31 @@ dependencies, native tooling, and reviewed HG002 fixture corpus. It emits:
 - an exact runtime-license inventory;
 - OCI platform attestations and audit receipt when a container is included.
 
-The workflow signs the candidate provenance blob with an ephemeral local
-Cosign key and immediately verifies it. That proves the qualification wiring;
-a later release needs an explicitly approved durable signing identity and a new
-exact-candidate run.
+The durable signing path uses Sigstore keyless signing on an exact default-branch
+manual qualification. GitHub Actions supplies a short-lived OIDC identity; no
+long-lived key or repository signing secret exists. Verification requires both
+the exact workflow identity
+`$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF` and issuer
+`https://token.actions.githubusercontent.com`.
+
+Pull-request runs and default manual qualifications build and scan unsigned
+candidate evidence. Signing additionally requires the explicit
+`publish_sigstore_entry=true` dispatch input and the repository's exact default
+branch. This is a separate public-write gate because Sigstore records signing
+metadata and the artifact digest in its public transparency log; it does not
+publish artifact contents. A private candidate release must leave the input
+false unless public signing metadata is separately approved.
+
+The OIDC permission exists only on that job-level-gated signing job. Pull
+requests and ordinary qualification jobs receive no identity-token permission,
+so code under review cannot bypass the public-write gate. The signing job also
+declares every distribution qualification as a prerequisite and requires
+`success()`, preventing an irreversible transparency entry for a partially
+qualified candidate.
+
+The Sigstore bundle necessarily contains the administrative repository and
+workflow identity. That identity is the sole hosting exception to product
+neutrality and is verified separately from product-owned content.
 
 ## Run the gates
 
@@ -104,3 +126,18 @@ The full cross-platform contract runs in
 `.github/workflows/distribution.yml`; a single workstation cannot substitute
 for its OS and architecture receipts. Passing qualification authorizes no
 upload, release, tag, merge, or visibility change.
+
+## Private GitHub release sequence
+
+The untagged default-branch run qualifies the exact source commit and its
+development-version artifacts. It does not qualify the final release version.
+After that run and the final source scans pass, create the immutable annotated
+`1.0.0` tag on the qualified commit and dispatch the full distribution workflow
+on that tag. Every wheel, source archive, Conda package, OCI image, and
+Apptainer build fails unless its derived version is exactly the tag name.
+
+Create the private GitHub release only after the tag-ref run succeeds and its
+downloaded artifacts, evidence, and workflow logs pass the final scans. Leave
+Sigstore publication disabled unless the public transparency-log write has
+separate approval. The tag and GitHub release do not authorize a visibility
+change or registry upload.

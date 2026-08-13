@@ -1,0 +1,8 @@
+{
+  "manifest_review_digest": "09183b313affddf1f1f7c55c5054a23235d0f750cde00f45af928dda52c08713",
+  "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
+  "review_id": "fixture-redistribution-review-2026-08-13",
+  "schema_name": "vcf-sv-stats.fixture-redistribution-review",
+  "schema_version": "1.0.0",
+  "subject": "HG002"
+}

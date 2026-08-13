@@ -1,4 +1,4 @@
-"""Stable pre-1.0 API surface for inspection, validation, and reporting."""
+"""Stable v1 candidate API surface for inspection, validation, and reporting."""
 
 from __future__ import annotations
 

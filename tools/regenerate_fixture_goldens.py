@@ -8,6 +8,11 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from tools.build_test_data import (
+    _auxiliary_artifacts,
+    _fixture_notice,
+    _write_source_comparison_artifacts,
+)
 from vcf_sv_stats.engine import stats
 from vcf_sv_stats.models import OperationRequest
 from vcf_sv_stats.serialization import json_bytes, write_bytes_atomic
@@ -53,6 +58,14 @@ def regenerate(test_data_dir: Path) -> None:
             diagnostic_content,
             force=True,
         )
+    _write_source_comparison_artifacts(test_data_dir, expected_dir)
+    (test_data_dir / "NOTICE.md").write_text(_fixture_notice(), encoding="utf-8")
+    manifest["auxiliary_artifacts"] = _auxiliary_artifacts(test_data_dir)
+    write_bytes_atomic(
+        test_data_dir / "manifest.json",
+        json_bytes(manifest),
+        force=True,
+    )
 
 
 def main() -> None:

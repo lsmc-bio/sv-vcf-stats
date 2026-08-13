@@ -27,6 +27,14 @@ def test_manifest_binds_all_hg002_fixtures() -> None:
     assert len(manifest["source_identity_evidence"]) == 22
     assert manifest["totals"]["source_derived_records"] < 2_500
     assert manifest["totals"]["compressed_vcf_bytes"] < 10 * 1024 * 1024
+    assert len(manifest["auxiliary_artifacts"]) == 45
+    assert {entry["artifact_role"] for entry in manifest["auxiliary_artifacts"]} == {
+        "expected_output",
+        "fixture_notice",
+        "source_manifest",
+    }
+    for entry in manifest["auxiliary_artifacts"]:
+        assert file_sha256(ROOT / entry["path"]) == entry["sha256"]
 
     for entry in manifest["fixtures"]:
         path = ROOT / entry["fixture_path"]

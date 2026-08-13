@@ -1,4 +1,231 @@
 {
+  "auxiliary_artifacts": [
+    {
+      "artifact_role": "fixture_notice",
+      "path": "NOTICE.md",
+      "sha256": "3259e718c1dfa00d9dab29e194625edec21ca820fa26a051ac72e25409778bef"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.native.diagnostics.jsonl",
+      "sha256": "d1a6d77c20369f17261ebab1735435556635cafe81027d9f016bec9b4491628a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.native.expected.json",
+      "sha256": "c45b8b97771a6137a77f4c2ec5a5178fbf7b7fdf859fe2d9e2cd86f1a9e1e238"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.normalized.diagnostics.jsonl",
+      "sha256": "d1a6d77c20369f17261ebab1735435556635cafe81027d9f016bec9b4491628a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.normalized.expected.json",
+      "sha256": "c6691beddc4d22f187ec6214f8b2c4581603344cb94dbc49d92aeeb8255e3cb0"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/jasmine.merged.diagnostics.jsonl",
+      "sha256": "0572247d7d9d78e25f514d78955e40afac964065d75f93643076edc4ca1a548a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/jasmine.merged.expected.json",
+      "sha256": "4c07230e8bcf5c11be32d590d9a6b1908e156bc6549464a118011779fa7e26a2"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.native.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.native.expected.json",
+      "sha256": "c46ee3552bc2be4ae674f3844968fe179e3a32e522280a5a388810b0d6226f6d"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.normalized.diagnostics.jsonl",
+      "sha256": "85180ef1f374fb4b5d264d8982e0502873e97677d940ed46d7b4e70cedc04ce9"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.normalized.expected.json",
+      "sha256": "75aa758786d8be3c9c55a2240f745efbb436452444f29b1e57fcdf6113b0cbfe"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/octopusv.merged.diagnostics.jsonl",
+      "sha256": "2dfd87ce5a8f3d4a940ade1e06ef14382ecd648eb6e8c78cb72d7fdc510d4947"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/octopusv.merged.expected.json",
+      "sha256": "08c5b1a413af4b8620929dd01442c202f31262430802f5e63c2fcc6097ef642e"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.cnvscope.diagnostics.jsonl",
+      "sha256": "6011759a1412644456def9ae1fc07347b89a8fcdc30e8343875dfa7520e9fb50"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.cnvscope.expected.json",
+      "sha256": "3d28a29eb5faadfdc2c164f9f74233aae653c9a122f8fea4a7b1e4026756fa47"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.native.diagnostics.jsonl",
+      "sha256": "e23590666ca13c8b20e38b7bdca7e92c3f1df0ba69d162c172f9124a562cd484"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.native.expected.json",
+      "sha256": "b6875258f6b9dfb8cdfaa69b2efce2ee75378d0fd47ee227d5df6b45606100d3"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.normalized.diagnostics.jsonl",
+      "sha256": "301c75b0d0969ccd1a83d190bfbd2a62ebc9d6b88dc44a4b8d34b8c87ca143ad"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.normalized.expected.json",
+      "sha256": "ff24422b13ff0f3bfbe5c8594852f635d6944ab4526ecc98ec7afd187a42c4fc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.native.diagnostics.jsonl",
+      "sha256": "072c81db17f4113102320610e172a6ed63d36f77f9a2528f5f8965f050b4e016"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.native.expected.json",
+      "sha256": "30d60b6aeb491077694ed7c3bc91c9537e3b8e14ca3563aae8e892b8cfac23b1"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.normalized.diagnostics.jsonl",
+      "sha256": "072c81db17f4113102320610e172a6ed63d36f77f9a2528f5f8965f050b4e016"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.normalized.expected.json",
+      "sha256": "59721b0fecbaf8f90c608daf113f3ba43a4532e94352e029cf714ad0415f2441"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/survivor.merged.diagnostics.jsonl",
+      "sha256": "2f99cdaedb5f731c335c17b059db4c2d7ca20309d2a2563e5b568cb22846a9e3"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/survivor.merged.expected.json",
+      "sha256": "83fc1b179e40aa3ec42af4481098c6b76da66382c68673abaac6ff52d225cadc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.native.diagnostics.jsonl",
+      "sha256": "453cdd6a599bc2e56ae647f8cb8b9d5f41d61ec7c78bdb1d99bc11a46ce43286"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.native.expected.json",
+      "sha256": "5e5be0f65ae3071e75d8b4f19d1b2144e1b8d0c6c65ce6cbe37519ea0a744a2f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.normalized.diagnostics.jsonl",
+      "sha256": "964b0bd5a1ffecc7f59a0eab11950db824621f328418055737ff952304928cc1"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.normalized.expected.json",
+      "sha256": "f146e3e53420a667e29be639c3cafdab187d2a5139cbadba131bc9e50550906f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.reference-repaired.diagnostics.jsonl",
+      "sha256": "fa68042460508fe054adfed05302c4e68134fd8296508a6bb56963dc07e5b00e"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.reference-repaired.expected.json",
+      "sha256": "3f9cfe72a7c9c5f282db69856cccc3ae36314c7f84a77948ca742b33bf3f4aed"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv-manta.source-comparison.expected.json",
+      "sha256": "9580638aacc9fec13ba4ee676d6b2c8f61adc8a0be52f19b8a8bd6717a428d75"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv.merged.diagnostics.jsonl",
+      "sha256": "77c0a64c07ca97a6d200db17b916eb143eaefe5295cb3f2b07fecafc47c5cb27"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv.merged.expected.json",
+      "sha256": "645bbd612529a6a76e02f027f19387b02fe0005e477da83e1d179dc76b3d739f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fn.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fn.expected.json",
+      "sha256": "b9dcff9f6f745e53246aa19fb7beae6ec789d2dede3d1c1a7dd91eca61a889fc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fp.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fp.expected.json",
+      "sha256": "6a861ec370c69396bbd50602e926e97bb571653f05b7adea93607401b7034d78"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.query.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.query.expected.json",
+      "sha256": "663d1d765f65d0678e301598073348c97156133ae3f54f976627b14efb792d50"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-base.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-base.expected.json",
+      "sha256": "c182394c307bc9d047aa178df431ca4572f1c8cfe1d38c2ebd40d2b43e4737c7"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-comp.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-comp.expected.json",
+      "sha256": "dc931fd31d0349cd8490bdc42832fe27738604183832fd336b5456739456d92b"
+    },
+    {
+      "artifact_role": "source_manifest",
+      "path": "source_manifests/trussv-manta.source-manifest.json",
+      "sha256": "f0eb75934d61ff30131f26f6f9406c2e1a12dcb1442840f587bf05ab669b9acf"
+    }
+  ],
   "derived_parity_artifacts": [
     {
       "derived_from": "manta.native.hg002.subset.vcf.gz",
@@ -6,6 +233,7 @@
       "fixture_record_count": 100,
       "fixture_sha256": "119f77cf4d82983769c07815f45a1bf93bf7f09ad461ed7b427e12bc915652b3",
       "index_sha256": "86142700e301327b8d09c41981a89516019e20695460466f091e883d4df97559",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "subject": "HG002"
     },
     {
@@ -13,6 +241,7 @@
       "fixture_path": "vcf/truvari.query.hg002.subset.vcf",
       "fixture_record_count": 68,
       "fixture_sha256": "b0caf44433d0e17de36b8f02858319854aa886060eceb255d1eed5cc43a47eed",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "subject": "HG002"
     }
   ],
@@ -24,7 +253,7 @@
       "fixture_sha256": "7b30467ab79553634185d6981a56808a0b0d9f3e67f82a4ec81a33f2a39b9f66",
       "index_sha256": "baf5b6171473d40e9259800ddc9c36fadbffb5aff1088e87a3b85c87f42f4489",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:filtered",
@@ -52,7 +281,7 @@
       "fixture_sha256": "a7e4b8cc4745cb9dc5abf2b6bbf2f6f12baa4b5519cb799de02eca99e28d8207",
       "index_sha256": "595eebe983d9442fe951276b2d8ba44da91cd90f1db64cc6db925a19d5a535f8",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:filtered",
@@ -80,7 +309,7 @@
       "fixture_sha256": "f56ed41870d91d25d7008a211dc3e6f2980e6b1acd228b74dae2845d5c90510c",
       "index_sha256": "3b89107353acc3404e5e07facc76a2d78878ff08423de8da6abb43e5e67d477c",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -118,7 +347,7 @@
       "fixture_sha256": "67bbb20e722e6278dee87fd45571640b333def9d97e99a36afcf9e5da323bccc",
       "index_sha256": "d622877a7cf7e88d7a1398a7545b0fdd29ca05fe07227e0cf093bec6f730cf2f",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:with-mate",
@@ -147,7 +376,7 @@
       "fixture_sha256": "2a2ac0c79684f991d2efb12e2c488bac2f10e1af403873eef68f2984e0ab2b11",
       "index_sha256": "7d1592e6926561cff497b49ac103c007d7aaefeb810b52fa33669073c965c59a",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:with-mate",
@@ -176,7 +405,7 @@
       "fixture_sha256": "e7a74cd1e82aac6a347616e15cff4f1a4093415620471b7c78bc3e72a0a0db32",
       "index_sha256": "d9e6af952f210412413a6ebf1cdedc48dd9c53dc860c8660eefc4cca1273f477",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -211,7 +440,7 @@
       "fixture_sha256": "093f0c0f0b50160059077becb6d7170bbb3fe4025fba61d026b0e25142ab9cb1",
       "index_sha256": "3f93a941abb1ecd883f1d4bce2353799cae9b471c0afa3cdaf823712b1f868d0",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:filtered",
@@ -236,7 +465,7 @@
       "fixture_sha256": "31afd90565188158a8cafedbaa748fcebfe9818d4315e50c42bd6d204dfe3be4",
       "index_sha256": "af3521c2f9740fb3f455c1adc0e8efa448b536964edaf868387719752f37bec5",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:missing",
@@ -260,7 +489,7 @@
       "fixture_sha256": "8957179ce01f504b5b945df7ca93e69c0212ecd0906d1914818e79b06bd5ffa9",
       "index_sha256": "074e6f12267240d488daab58f67aa26f1326b58eee7e5fc6764c7a424b61980e",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:missing",
@@ -284,7 +513,7 @@
       "fixture_sha256": "2c7b7d84632577022f32196c5d01f0c2297aa3c5b0f7e1ef1cf2b12a226bfdfb",
       "index_sha256": "c7a25a297e629cc518270b92587a7f265364799f967909d1a1e37cf7ccdcf5a8",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -313,7 +542,7 @@
       "fixture_sha256": "379a33632795e6d8afea62c5a909fa57d4031f581af5777f6560e187420af987",
       "index_sha256": "c631f4ae0e63bee1bf1e4d7f1e5061525fca87d5e7ec2fe1b462e6eee8a6eb77",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -342,7 +571,7 @@
       "fixture_sha256": "190e652d7b8e2d2d9f0811cd0ed8ea1f65738107b8cc2940782bcf8b6c87760b",
       "index_sha256": "319cab9ffc9120f0bd5197ab66430c9de7054a69f399e2249bfc845338799f1e",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -370,7 +599,7 @@
       "fixture_sha256": "d17b8c5217df5a3f4250e4fb92537ef232c3b4aa53f26f0e9ced0f149ebf0e23",
       "index_sha256": "2d91335fb059ba376cfdba3863dedb0bc32f7361f63ff4af94301437fa9bd1d4",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -404,7 +633,7 @@
       "fixture_sha256": "9417be64aed1132b6842a8cb78febf4c0e7bd53a79c72e557f67603f4fa1b1a1",
       "index_sha256": "108f499e7d99d44fa76dcb5588a9af1e0675908054bc9f3d3ddf01fb4f06b505",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -437,7 +666,7 @@
       "fixture_sha256": "433ce408f0197690885ee93bc994313bb5a0d26524a6dd8dadc4c5c01f19e691",
       "index_sha256": "2e128998008f1fd8511fc035f3f191d45a8df76a6da76c9e42f6cadcef10240d",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -471,7 +700,7 @@
       "fixture_sha256": "657b7c7162071833634c324ad33e3e5e9cd984e84e0c7f73291f85d0e715251c",
       "index_sha256": "35a5aac4e35cb887a3a1df0d1e2b4632901f7eec0be0c4f90ee2d41b885e2650",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "bnd:orphan-or-single",
@@ -504,7 +733,7 @@
       "fixture_sha256": "a2bc5e27ebf5c628db7a46aba7ae73423829407550bf58bcd9ccd69f682a7d32",
       "index_sha256": "e43fac5c8c2a02088de896d2e0c9fc607a9be2b2b951458c6517c30d24b29160",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "copy-number:one",
@@ -533,7 +762,7 @@
       "fixture_sha256": "dba4effcbc357fbc6e5787a248c017945a29373c2d169a3280a82c8642da1c93",
       "index_sha256": "809905c789f9a3d47859d9563611914cbe725abc85a02b342a6295cc21c97361",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:missing",
@@ -556,7 +785,7 @@
       "fixture_sha256": "30a4b4ec89f637d2e1921ae328b9980247a16466baf4105d95bb10b3c3b327ab",
       "index_sha256": "16dbe2eb33c8b17a28a6f8bbc3c065db5cde4d0a5ce96c233955e94cb18d5b31",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "copy-number:one",
@@ -585,7 +814,7 @@
       "fixture_sha256": "bcfcaaddc9c583ed32a17772f859622ad5fff33dabedb88fe356bca2ab3fec6a",
       "index_sha256": "f5d25768511f665d5e5ce9b9ea2ee9cff8dfb798eb8229619c4320199dfd80de",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "filter:missing",
@@ -608,7 +837,7 @@
       "fixture_sha256": "e83aa38294779edb02223a492b2304fa6308bc17395fe2598b2dfd1061a3f703",
       "index_sha256": "9e97edfced40af5fc0c0ff5b2d265714a28b2d2ac3c91a6f98e793296cd46be3",
       "oversized_relationship_exclusions": [],
-      "redistribution_status": "reviewed-public-derived-data",
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
       "sanitization_version": "fixture-sanitizer/1",
       "selected_behavior_classes": [
         "copy-number:one",

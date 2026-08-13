@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any, cast
 
 from tools.build_sbom import _wheel_version
+from tools.verify_test_data import verify as verify_test_data
 from vcf_sv_stats.exceptions import UsageError
+from vcf_sv_stats.fixture_review import load_review, verify_review
 from vcf_sv_stats.serialization import (
     file_sha256,
     write_bytes_atomic,
@@ -151,18 +153,26 @@ def build(
         raise UsageError("wheel and source archive versions differ")
     root = Path(__file__).parents[1]
     inventory = _inventory(root / "packaging/runtime-licenses.json", root / "requirements.lock.txt")
+    try:
+        verify_test_data(root / "test_data")
+    except ValueError as exc:
+        raise UsageError("fixture corpus failed strict release verification") from exc
     fixture_manifest = root / "test_data/manifest.json"
     fixture_value = cast(dict[str, Any], json.loads(fixture_manifest.read_text(encoding="utf-8")))
+    try:
+        verify_review(
+            fixture_value,
+            load_review(root / "test_data/redistribution-review.json"),
+        )
+    except ValueError as exc:
+        raise UsageError("fixture redistribution review does not bind this manifest") from exc
     fixture_subjects = sorted(
         {
             str(item["subject"])
             for item in [*fixture_value["fixtures"], *fixture_value["derived_parity_artifacts"]]
         }
     )
-    fixture_statuses = sorted(
-        {str(item["redistribution_status"]) for item in fixture_value["fixtures"]}
-    )
-    if fixture_subjects != ["HG002"] or fixture_statuses != ["reviewed-public-derived-data"]:
+    if fixture_subjects != ["HG002"]:
         raise UsageError("fixture license evidence is not terminal and single-subject")
 
     artifacts = [
@@ -191,7 +201,7 @@ def build(
         "licenses": [_license(inventory["fixtures"]["license_expression"])],
         "properties": [
             {"name": "vcf-sv-stats:subject", "value": "HG002"},
-            {"name": "vcf-sv-stats:public-release-review-required", "value": "true"},
+            {"name": "vcf-sv-stats:public-release-review-required", "value": "false"},
         ],
     }
     artifact_components = [
@@ -331,7 +341,7 @@ def build(
                 "annotator": "Tool: vcf-sv-stats-release-evidence-1",
                 "comment": (
                     f"Native component package index begins at {native_start}; "
-                    "fixture public-release review remains required."
+                    "fixture redistribution is reviewed; publication approval remains required."
                 ),
             }
         ],
@@ -340,7 +350,7 @@ def build(
                 "licenseId": "LicenseRef-Public-Data-Redistribution-Reviewed",
                 "extractedText": (
                     "Public HG002-derived fixture redistribution was reviewed for this "
-                    "private candidate. Review is required again before public release."
+                    "public release candidate. Publication remains a separately approved gate."
                 ),
                 "name": "Public data redistribution review",
             }

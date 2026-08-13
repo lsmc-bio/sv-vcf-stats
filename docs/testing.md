@@ -46,6 +46,11 @@ percentage.
 uv run python tools/verify_test_data.py --test-data-dir test_data
 ```
 
+This default is the strict release gate and requires an exact-digest review
+policy. Reviewers of a newly regenerated corpus may run the same command with
+`--allow-pending-redistribution-review`; that explicit mode validates content,
+identity, indexes, and budgets but cannot satisfy release evidence.
+
 The verifier independently checks:
 
 - the exact expected file set;
@@ -54,7 +59,10 @@ The verifier independently checks:
 - exactly one sample column named `HG002` in every VCF and BCF;
 - absence of other common reference-subject token patterns;
 - source-digest links to the inspected single-HG002 corpus;
-- redistribution status for every fixture;
+- hashes and a closed file set for every expected output, source manifest, and
+  fixture notice;
+- the exact-digest redistribution-review policy and status for every fixture
+  and bundled auxiliary artifact;
 - plain/compressed and VCF/BCF parity artifacts.
 
 `tests/test_fixtures.py` then runs the application over every role and compares

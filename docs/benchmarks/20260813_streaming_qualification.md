@@ -2,7 +2,7 @@
 
 Date: 2026-08-13
 
-Outcome: pass. The complete pre-1.0 qualification matrix demonstrates
+Outcome: pass. The complete release-candidate qualification matrix demonstrates
 deterministic results, bounded resident memory, approximately linear temporary
 space, a bounded cost over a fair minimal reader, thread-count invariance, and
 atomic failure behavior. This is a qualification result, not a throughput

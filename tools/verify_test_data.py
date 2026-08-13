@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import pysam
 
+from vcf_sv_stats.fixture_review import PENDING_REDISTRIBUTION_STATUS, load_review, verify_review
 from vcf_sv_stats.serialization import file_sha256
 
 SUBJECT = "HG002"
@@ -18,6 +19,7 @@ SUBJECT_TOKEN = re.compile(r"(?i)\b(?:HG\d{3}|NA\d{5}|GM\d{5})\b")
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
 MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
+AUXILIARY_ROLES = {"expected_output", "fixture_notice", "source_manifest"}
 
 
 def _unexpected_subjects(text: str) -> set[str]:
@@ -39,12 +41,19 @@ def _inspect_variant(path: Path) -> int:
     return observed
 
 
-def verify(root: Path) -> dict[str, int]:
+def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
     manifest = cast(
         dict[str, Any], json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     )
     if manifest.get("subject") != SUBJECT:
         raise ValueError("Fixture manifest subject is not HG002")
+    review_path = root / "redistribution-review.json"
+    if review_path.is_file():
+        redistribution_status = verify_review(manifest, load_review(review_path))
+    elif require_review:
+        raise ValueError("Fixture redistribution review policy is missing")
+    else:
+        redistribution_status = PENDING_REDISTRIBUTION_STATUS
     source_evidence = manifest.get("source_identity_evidence")
     if not isinstance(source_evidence, list) or len(source_evidence) != 22:
         raise ValueError("Fixture manifest must contain all 22 source identity inspections")
@@ -63,19 +72,23 @@ def verify(root: Path) -> dict[str, int]:
     records = 0
     compressed_bytes = 0
     expected_variant_paths: set[Path] = set()
+    expected_paths = {root / "manifest.json"}
+    if review_path.is_file():
+        expected_paths.add(review_path)
     source_fixture_counts: dict[str, int] = {}
     for entry in manifest["fixtures"]:
         if entry.get("subject") != SUBJECT:
             raise ValueError(f"Fixture manifest subject mismatch: {entry['fixture_id']}")
         if entry.get("source_sha256") not in evidence_digests:
             raise ValueError(f"Fixture source lacks HG002 identity evidence: {entry['fixture_id']}")
-        if entry.get("redistribution_status") != "reviewed-public-derived-data":
+        if entry.get("redistribution_status") != redistribution_status:
             raise ValueError(f"Fixture redistribution review is incomplete: {entry['fixture_id']}")
         if entry.get("oversized_relationship_exclusions"):
             fixture_id = entry["fixture_id"]
             raise ValueError(f"Fixture has an oversized relationship exclusion: {fixture_id}")
         path = root / entry["fixture_path"]
         expected_variant_paths.add(path)
+        expected_paths.update((path, Path(str(path) + ".tbi")))
         if file_sha256(path) != entry["fixture_sha256"]:
             raise ValueError(f"Fixture digest mismatch: {path.name}")
         index = Path(str(path) + ".tbi")
@@ -95,8 +108,12 @@ def verify(root: Path) -> dict[str, int]:
     for derived in manifest.get("derived_parity_artifacts", []):
         if derived.get("subject") != SUBJECT:
             raise ValueError(f"Derived fixture subject mismatch: {derived['fixture_path']}")
+        if derived.get("redistribution_status") != redistribution_status:
+            fixture_path = derived["fixture_path"]
+            raise ValueError(f"Derived fixture redistribution review is incomplete: {fixture_path}")
         path = root / derived["fixture_path"]
         expected_variant_paths.add(path)
+        expected_paths.add(path)
         if file_sha256(path) != derived.get("fixture_sha256"):
             raise ValueError(f"Derived fixture digest mismatch: {path.name}")
         observed = _inspect_variant(path)
@@ -106,16 +123,48 @@ def verify(root: Path) -> dict[str, int]:
             raise ValueError(f"Derived fixture is not record-parallel: {path.name}")
         if "index_sha256" in derived:
             index = Path(str(path) + ".csi")
+            expected_paths.add(index)
             if not index.is_file() or file_sha256(index) != derived["index_sha256"]:
                 raise ValueError(f"Derived fixture index mismatch: {path.name}")
+    auxiliary = manifest.get("auxiliary_artifacts")
+    if not isinstance(auxiliary, list) or not auxiliary:
+        raise ValueError("Fixture manifest auxiliary artifacts are missing")
+    auxiliary_paths: set[Path] = set()
+    for entry in auxiliary:
+        if not isinstance(entry, dict) or set(entry) != {"artifact_role", "path", "sha256"}:
+            raise ValueError("Fixture manifest auxiliary artifact is malformed")
+        if entry["artifact_role"] not in AUXILIARY_ROLES:
+            raise ValueError("Fixture manifest auxiliary artifact role is invalid")
+        path_value = entry["path"]
+        if not isinstance(path_value, str):
+            raise ValueError("Fixture manifest auxiliary artifact path is invalid")
+        relative = Path(path_value)
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or relative.as_posix() != path_value
+        ):
+            raise ValueError("Fixture manifest auxiliary artifact path is unsafe")
+        path = root / relative
+        if path in auxiliary_paths:
+            raise ValueError("Fixture manifest auxiliary artifact path is duplicated")
+        auxiliary_paths.add(path)
+        expected_paths.add(path)
+        digest = entry["sha256"]
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise ValueError("Fixture manifest auxiliary artifact digest is invalid")
+        if path.is_symlink() or not path.is_file() or file_sha256(path) != digest:
+            raise ValueError(f"Fixture auxiliary artifact mismatch: {path.name}")
     actual_variant_paths = {
         path
         for path in (root / "vcf").iterdir()
-        if path.is_file()
-        and (path.name.endswith(".vcf.gz") or path.suffix in {".vcf", ".bcf"})
+        if path.is_file() and (path.name.endswith(".vcf.gz") or path.suffix in {".vcf", ".bcf"})
     }
     if actual_variant_paths != expected_variant_paths:
         raise ValueError("Fixture manifest and variant files do not match exactly")
+    actual_paths = {path for path in root.rglob("*") if path.is_file()}
+    if actual_paths != expected_paths:
+        raise ValueError("Fixture manifest and bundled files do not match exactly")
     totals = manifest.get("totals", {})
     if records != totals.get("source_derived_records") or records > MAX_CORPUS_RECORDS:
         raise ValueError("Fixture corpus record total is invalid")
@@ -139,8 +188,12 @@ def verify(root: Path) -> dict[str, int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--test-data-dir", type=Path, required=True)
+    parser.add_argument("--allow-pending-redistribution-review", action="store_true")
     args = parser.parse_args()
-    result = verify(args.test_data_dir.resolve(strict=True))
+    result = verify(
+        args.test_data_dir.resolve(strict=True),
+        require_review=not args.allow_pending_redistribution_review,
+    )
     print(json.dumps(result, sort_keys=True))
 
 

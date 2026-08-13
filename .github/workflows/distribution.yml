@@ -3,6 +3,12 @@ name: Distribution qualification
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish_sigstore_entry:
+        description: Publish signing metadata to the public Sigstore transparency log
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -35,7 +41,12 @@ jobs:
       - name: Build the exact wheel and source archive
         run: |
           uv sync --locked --all-extras --python "${{ matrix.python-version }}"
-          SOURCE_DATE_EPOCH=315532800 uv build
+          candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
+          SETUPTOOLS_SCM_PRETEND_VERSION="$candidate_version" \
+            SOURCE_DATE_EPOCH=315532800 uv build
           uv run python tools/normalize_sdist.py \
             --sdist dist/*.tar.gz --epoch 315532800
       - name: Prepare a complete local wheelhouse
@@ -130,6 +141,9 @@ jobs:
         shell: bash -el {0}
         run: |
           candidate_version=$(python -m setuptools_scm)
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           export SETUPTOOLS_SCM_PRETEND_VERSION="$candidate_version"
           conda build packaging/conda/rfc8785 \
             --output-folder /tmp/local-channel -c conda-forge --no-anaconda-upload
@@ -161,11 +175,13 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: anchore/sbom-action/download-syft@v0.24.0
-      - uses: sigstore/cosign-installer@v4.1.2
       - name: Build and audit the exact multi-architecture candidate
         run: |
           uv sync --locked --all-extras --python 3.11
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           mkdir release release/container-attestations
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
@@ -210,7 +226,7 @@ jobs:
               > "/tmp/product-owned/$architecture/image-config.json"
             docker rm "$container_id"
           done
-      - name: Build aggregate SBOM, checksums, and signed candidate provenance
+      - name: Build aggregate SBOM, checksums, and candidate provenance
         env:
           SOURCE_DATE_EPOCH: "315532800"
         run: |
@@ -224,20 +240,15 @@ jobs:
             --output-dir release --source-commit "$GITHUB_SHA" \
             --created 1980-01-01T00:00:00Z \
             --invocation-id "github-actions-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          export COSIGN_PASSWORD="$(openssl rand -hex 32)"
-          cosign generate-key-pair --output-key-prefix /tmp/candidate
-          cosign sign-blob --yes --key /tmp/candidate.key \
-            --bundle release/candidate.provenance.sigstore.json \
-            release/candidate.provenance.intoto.json
-          cosign verify-blob --key /tmp/candidate.pub \
-            --bundle release/candidate.provenance.sigstore.json \
-            release/candidate.provenance.intoto.json
-          cp /tmp/candidate.pub release/candidate.cosign.pub
       - name: Scan the OCI archive and every evidence artifact
         run: |
           mkdir /tmp/oci-archive-scan /tmp/release-neutrality-scan
           cp /tmp/vcf-sv-stats.oci.tar /tmp/oci-archive-scan/candidate.oci.tar
-          cp release/candidate.* release/oci-audit.json \
+          cp release/candidate.checksums.txt \
+            release/candidate.cyclonedx.json \
+            release/candidate.provenance-predicate.json \
+            release/candidate.provenance.intoto.json \
+            release/candidate.spdx.json release/oci-audit.json \
             /tmp/release-neutrality-scan/
           uv run python tools/scan_tokens.py \
             --root /tmp/oci-archive-scan \
@@ -256,6 +267,58 @@ jobs:
           path: |
             dist/
             release/
+
+  sigstore:
+    name: Opt-in default-branch Sigstore provenance
+    if: >-
+      success() &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.publish_sigstore_entry &&
+      github.ref_name == github.event.repository.default_branch
+    needs:
+      - aggregate-install-matrix
+      - bioconda
+      - oci
+      - apptainer
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - uses: sigstore/cosign-installer@v4.1.2
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate-evidence
+          path: /tmp/release-candidate-evidence
+      - name: Sign and verify provenance with the exact workflow identity
+        run: |
+          certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"
+          expected_identity="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/distribution.yml@refs/heads/${{ github.event.repository.default_branch }}"
+          test "$certificate_identity" = "$expected_identity"
+          provenance=/tmp/release-candidate-evidence/release/candidate.provenance.intoto.json
+          bundle=/tmp/candidate.provenance.sigstore.json
+          cosign sign-blob --yes --bundle "$bundle" "$provenance"
+          cosign verify-blob \
+            --bundle "$bundle" \
+            --certificate-identity "$certificate_identity" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$provenance"
+      - name: Scan the signing bundle
+        run: |
+          uv sync --locked --all-extras --python 3.11
+          mkdir /tmp/signature-scan
+          cp /tmp/candidate.provenance.sigstore.json /tmp/signature-scan/
+          uv run python tools/scan_tokens.py \
+            --root /tmp/signature-scan \
+            --policy policy/forbidden-token-hashes.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-signature
+          path: /tmp/candidate.provenance.sigstore.json
 
   apptainer:
     name: Apptainer read-only and non-root smoke
@@ -282,6 +345,9 @@ jobs:
         run: |
           uv sync --locked --all-extras --python 3.11
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           docker build --tag vcf-sv-stats:apptainer \
             --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
             --build-arg "SOURCE_COMMIT=$GITHUB_SHA" .

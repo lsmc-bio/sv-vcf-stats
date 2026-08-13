@@ -37,6 +37,6 @@
     "license_expression": "LicenseRef-Public-Data-Redistribution-Reviewed",
     "notice": "test_data/NOTICE.md",
     "manifest": "test_data/manifest.json",
-    "public_release_review_required": true
+    "public_release_review_required": false
   }
 }
