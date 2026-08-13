@@ -2,9 +2,10 @@
 
 ## Reporting a vulnerability
 
-During private development, report suspected vulnerabilities to a repository
-administrator through a previously established private channel. When the
-repository becomes public, use its private vulnerability-reporting interface.
+Use this public repository's private vulnerability-reporting interface for
+suspected vulnerabilities. If that interface is temporarily unavailable during
+the visibility transition, report through a previously established private
+maintainer channel.
 
 Do not open a public issue for an undisclosed vulnerability. Do not attach
 genomic data, complete VCF rows, credentials, private paths, command histories,
@@ -20,12 +21,13 @@ or unsanitized headers. A useful minimal report contains:
 ## Visibility-transition gate
 
 The authenticated private-vulnerability-reporting status endpoint returned
-`404` while this repository was non-public on 2026-08-13. That is the current
-platform boundary, not evidence that reporting is enabled.
+`404` while this repository was non-public on 2026-08-13. That was the
+pre-release platform boundary, not evidence that reporting was enabled.
 
-Immediately after an explicitly approved public-visibility change, an
-administrator must enable the feature and read it back before any tag, package,
-image, release, or announcement:
+Immediately after the explicitly approved public-visibility change, an
+administrator must enable the feature and read it back before the public
+GitHub release or announcement. An annotated tag and private Actions
+qualification may precede the visibility change:
 
 ```bash
 gh api --method PUT repos/OWNER/REPOSITORY/private-vulnerability-reporting
@@ -38,9 +40,9 @@ reporting path.
 
 ## Supported versions
 
-Published release notes will list supported versions. Until the first public
-release, only the current default branch receives security fixes. Candidate
-artifacts should not be treated as long-term-supported releases.
+The latest published 1.x release and current default branch receive security
+fixes. Historical candidate artifacts should not be treated as supported
+installation releases.
 
 ## Security-relevant boundaries
 

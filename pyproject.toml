@@ -31,6 +31,11 @@ dependencies = [
   "typer>=0.21,<0.22",
 ]
 
+[project.urls]
+Homepage = "https://github.com/lsmc-bio/sv-vcf-stats"
+Repository = "https://github.com/lsmc-bio/sv-vcf-stats"
+Issues = "https://github.com/lsmc-bio/sv-vcf-stats/issues"
+
 [project.optional-dependencies]
 dev = [
   "build>=1.2,<2",

@@ -1,6 +1,6 @@
 # `vcf-sv-stats` 1.0 normative contract
 
-Status: 1.0 public-release candidate. Requirements use MUST, SHOULD, and MAY in
+Status: stable 1.0 public contract. Requirements use MUST, SHOULD, and MAY in
 their ordinary standards sense.
 
 ## Purpose and boundary
@@ -189,7 +189,7 @@ raw sources never enter Git. The manifest binds source and fixture digests,
 counts, behavior classes, sanitization version, identity evidence, and
 redistribution review.
 
-Repository visibility remains non-public until an explicitly approved release
-action. Public visibility, package or container publication, external upstream
-merge, and the annotated `1.0.0` tag are independent gates. Preparing an
-upstream contribution for review does not authorize any of those actions.
+Repository visibility and the GitHub release wheel require explicit release
+authorization. Package or container registry publication and external upstream
+merge remain independent gates. Preparing an upstream contribution for review
+does not authorize any of those actions.

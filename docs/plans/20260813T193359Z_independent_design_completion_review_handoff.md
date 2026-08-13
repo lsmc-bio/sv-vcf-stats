@@ -2,7 +2,30 @@
 
 Date: 2026-08-13
 
-## Mission for the next thread
+## Controlling scope amendment: GitHub release wheel
+
+This dated amendment controls the current execution tranche. It preserves all
+completed implementation, fixture, MultiQC, security, and distribution work and
+defers—without deleting or accepting—the broader independent review below.
+
+The immediate mission is to release `1.0.1` from the existing
+`codex/public-release-candidate` branch and make the repository public. The sole
+new installation contract is pip installation from the universal wheel attached
+to the GitHub release. A Conda environment uses pip with that identical URL; no
+native Conda package or channel is published.
+
+The tranche is complete only when the branch is merged normally, the annotated
+`1.0.1` tag is qualified by the existing distribution workflow on the tag ref,
+the repository and release are public, and clean ordinary and Conda Python
+environments install and verify the same anonymous wheel URL. PyPI, Bioconda,
+Conda channels, container registries, Sigstore publication, public-upstream
+MultiQC work, and a renewed full design audit are outside this tranche.
+
+For this tranche only, this amendment supersedes the historical instruction to
+keep the repository private. Every other safety, neutrality, identity, fixture,
+and no-fallback boundary remains in force.
+
+## Deferred mission for a later independent-review thread
 
 Perform a skeptical, repository-grounded review of `vcf-sv-stats`. Determine
 whether the implementation actually fulfills its design intention, normative
@@ -14,7 +37,7 @@ Do not inherit a percentage or `SUCCESS` row as truth. Recalculate completion
 from executable evidence. Distinguish all rows being terminal from the objective
 being genuinely complete.
 
-## Non-negotiable boundaries
+## Deferred review boundaries
 
 - Keep the tool portable and public-neutral. Product code, documentation,
   schemas, outputs, fixtures, package metadata, and runtime behavior must not
@@ -38,7 +61,7 @@ being genuinely complete.
 - Refer to the prohibited branding requirement only as `BRAND-002`; do not spell
   or echo a matching token in files, commit messages, tags, issues, or logs.
 
-## Read before judging
+## Deferred review reading order
 
 Read these sources completely and in this order:
 
@@ -60,7 +83,7 @@ merged pull requests, rules, visibility, tags, releases, workflow runs,
 security settings, and attached release evidence. Treat the checked-out source
 and live repository as authoritative over this handoff if they differ.
 
-## Required review questions
+## Deferred review questions
 
 ### Product and interface
 
@@ -131,7 +154,7 @@ and live repository as authoritative over this handoff if they differ.
 - Confirm the fork release consumes the in-repository neutral HG002 summary and
   has no dependency on the superseded public upstream drafts.
 
-## Evidence and execution contract
+## Deferred review evidence and execution contract
 
 Create a new datetime-named controlling ledger in `docs/plans/` before making
 changes. Gate 0 must record the exact commits, tags, releases, workflow run IDs,

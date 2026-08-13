@@ -10,7 +10,7 @@
   <img alt="Python 3.11 through 3.13" src="https://img.shields.io/badge/Python-3.11%E2%80%933.13-3776AB?logo=python&amp;logoColor=white">
   <img alt="VCF and BCF" src="https://img.shields.io/badge/input-VCF%20%7C%20BCF-7B61FF">
   <img alt="Apache License 2.0" src="https://img.shields.io/badge/license-Apache--2.0-2EA44F">
-  <img alt="1.0 release candidate" src="https://img.shields.io/badge/status-1.0%20release%20candidate-F59E0B">
+  <img alt="1.0 release" src="https://img.shields.io/badge/status-1.0%20release-2EA44F">
   <img alt="no telemetry" src="https://img.shields.io/badge/telemetry-none-111827">
 </p>
 
@@ -27,12 +27,11 @@ streams records into a canonical observation model, resolves relationships on
 disk, reports layered diagnostics, and emits deterministic JSON whose metrics
 name their grain and denominator.
 
-> **Project status:** this is a complete 1.0 public-release candidate under
-> non-public qualification. The fixed v1 acceptance plan is implemented and its
-> evidence is retained in the repository. The private `1.0.0` GitHub release
-> records the qualified commit without changing visibility or publishing to a
-> registry. Public visibility, package or image publication, and external
-> upstream contribution remain explicit approval gates.
+> **Project status:** the stable v1 implementation and its qualification
+> evidence are retained in this public repository. Release `1.0.1` adds one
+> supported distribution path: pip installation from the wheel attached to the
+> GitHub release. No package, Conda, or container registry is used, and external
+> upstream contribution remains a separate approval gate.
 
 ## The 30-second tour
 
@@ -140,9 +139,35 @@ confirmed retrieval of one pinned public reference profile.
 
 ## Quick start
 
+### Install from the GitHub release
+
+Install the exact `1.0.1` wheel in any Python 3.11, 3.12, or 3.13 environment:
+
+```bash
+python -m pip install --no-cache-dir \
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+vcf-sv-stats version
+vcf-sv-stats-verify-install
+```
+
+The same wheel URL is the supported Conda path; create a Conda environment and
+use its Python interpreter to run pip:
+
+```bash
+conda create --yes --name vcf-sv-stats python=3.13 pip
+conda run --name vcf-sv-stats python -m pip install --no-cache-dir \
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+conda run --name vcf-sv-stats vcf-sv-stats version
+conda run --name vcf-sv-stats vcf-sv-stats-verify-install
+```
+
+This is pip operating inside Conda, not a native Conda package or channel.
+The automatically generated GitHub source snapshots are not the supported
+installation artifact for this release.
+
 ### Development checkout
 
-The package is not published to a registry. From a checkout:
+The package is not published to a registry. For development from a checkout:
 
 ```bash
 uv sync --locked --all-extras
@@ -362,7 +387,8 @@ names—not source rows or private paths. See [SECURITY.md](SECURITY.md).
 | [Distribution guide](docs/distribution.md) | Offline install, Bioconda, OCI, Apptainer, SBOM, and provenance contract |
 | [MultiQC integration](docs/multiqc-integration.md) | Producer/consumer boundary for aggregate reporting |
 | [Normative specification](docs/specifications/vcf-sv-stats-1.0.0.md) | 1.0 requirements and stable terminology |
-| [1.0.0 release notes](docs/releases/1.0.0.md) | Qualified feature, evidence, and publication boundaries |
+| [1.0.1 release notes](docs/releases/1.0.1.md) | Public GitHub wheel installation and qualification |
+| [1.0.0 release notes](docs/releases/1.0.0.md) | Historical private-candidate evidence and boundaries |
 | [Implementation ledger](docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) | Acceptance evidence, completion accounting, and release gates |
 
 ## Release boundary
@@ -372,22 +398,21 @@ VCF 4.5 behavior, source/merged comparison, canonical multiallelic
 normalization, native aggregate reporting, large-callset qualification, and
 offline multi-platform distribution evidence all have executable proofs.
 
-That does not silently make the project public. The repository remains
-non-public pending separate approval. The private `1.0.0` tag and GitHub release
-record this qualified source state; no package or container has been published
-to a registry and no public visibility change has been made. Fixture
-redistribution has a dated release-candidate review. Native MultiQC integration
-is qualified in a maintained fork; any external upstream contribution remains a
-later, independently reviewed action.
+The repository and its GitHub release history are public. Release `1.0.1`
+publishes only a universal wheel and its checksum as uploaded GitHub assets.
+No package, Conda, or container artifact is published to a registry. Fixture
+redistribution retains its dated release-candidate review. Native MultiQC
+integration remains qualified in the maintained fork; any external upstream
+contribution remains a later, independently reviewed action.
 
 `caller-lossless` remains a reserved, unsupported profile, and every lossy
 authorization remains rejected because v1 implements no lossy transform.
 
 ## Contributing
 
-Contributions are welcome once the repository opens. The bar is intentionally
-high: add evidence, define the grain, preserve provenance, fail loudly when a
-contract is missing, and test every claimed behavior. Start with
+Contributions are welcome. The bar is intentionally high: add evidence, define
+the grain, preserve provenance, fail loudly when a contract is missing, and
+test every claimed behavior. Start with
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License

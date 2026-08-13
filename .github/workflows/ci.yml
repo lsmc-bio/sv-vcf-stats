@@ -41,6 +41,7 @@ jobs:
       - run: >-
           uv run python tools/scan_tokens.py --root .
           --policy policy/neutrality-token-hashes.json --structural
+          --source-github-repository lsmc-bio/sv-vcf-stats
 
   package:
     name: Package and artifact audit
@@ -73,6 +74,7 @@ jobs:
       - run: >-
           uv run python tools/scan_tokens.py --root .
           --policy policy/neutrality-token-hashes.json --structural
+          --source-github-repository lsmc-bio/sv-vcf-stats
       - uses: actions/upload-artifact@v4
         with:
           name: distributions

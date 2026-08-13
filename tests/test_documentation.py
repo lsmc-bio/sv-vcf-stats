@@ -197,6 +197,29 @@ def test_readme_corpus_and_dependency_claims_match_metadata() -> None:
         assert f"`{dependency}`" in readme
 
 
+def test_public_release_wheel_url_and_repository_metadata_are_exact() -> None:
+    wheel_url = (
+        "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/"
+        "vcf_sv_stats-1.0.1-py3-none-any.whl"
+    )
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+
+    for document in (
+        ROOT / "README.md",
+        ROOT / "docs/distribution.md",
+        ROOT / "docs/releases/1.0.1.md",
+    ):
+        text = document.read_text(encoding="utf-8")
+        assert wheel_url in text
+        assert "conda run --name vcf-sv-stats python -m pip install" in text
+
+    assert project["urls"] == {
+        "Homepage": "https://github.com/lsmc-bio/sv-vcf-stats",
+        "Repository": "https://github.com/lsmc-bio/sv-vcf-stats",
+        "Issues": "https://github.com/lsmc-bio/sv-vcf-stats/issues",
+    }
+
+
 def test_current_documentation_uses_release_candidate_status() -> None:
     current_status_documents = (
         ROOT / "README.md",

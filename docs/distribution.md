@@ -1,9 +1,30 @@
 # Distribution qualification
 
-`vcf-sv-stats` is a 1.0 public-release candidate under non-public
-qualification. This guide defines how a candidate proves installability and
-supply-chain evidence without changing repository visibility or publishing a
-package, container, or Conda artifact to a registry.
+`vcf-sv-stats` is a public 1.0 release. This guide defines how a candidate
+proves installability and supply-chain evidence. Release `1.0.1` publishes one
+wheel through GitHub Releases without publishing a package, container, or Conda
+artifact to a registry.
+
+## GitHub release wheel
+
+The supported public installation artifact is the universal wheel attached to
+the `1.0.1` GitHub release:
+
+```bash
+python -m pip install --no-cache-dir \
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+```
+
+The identical URL is used inside a Conda environment:
+
+```bash
+conda create --yes --name vcf-sv-stats python=3.13 pip
+conda run --name vcf-sv-stats python -m pip install --no-cache-dir \
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+```
+
+This is not a native Conda package or channel. The generated GitHub source-code
+snapshots are not the supported pip artifact for this release.
 
 ## Supported target contract
 
@@ -98,8 +119,8 @@ candidate evidence. Signing additionally requires the explicit
 `publish_sigstore_entry=true` dispatch input and the repository's exact default
 branch. This is a separate public-write gate because Sigstore records signing
 metadata and the artifact digest in its public transparency log; it does not
-publish artifact contents. A private candidate release must leave the input
-false unless public signing metadata is separately approved.
+publish artifact contents. Release `1.0.1` leaves the input false because no
+Sigstore publication was requested.
 
 The OIDC permission exists only on that job-level-gated signing job. Pull
 requests and ordinary qualification jobs receive no identity-token permission,
@@ -127,17 +148,17 @@ The full cross-platform contract runs in
 for its OS and architecture receipts. Passing qualification authorizes no
 upload, release, tag, merge, or visibility change.
 
-## Private GitHub release sequence
+## Public GitHub wheel release sequence
 
 The untagged default-branch run qualifies the exact source commit and its
 development-version artifacts. It does not qualify the final release version.
 After that run and the final source scans pass, create the immutable annotated
-`1.0.0` tag on the qualified commit and dispatch the full distribution workflow
+`1.0.1` tag on the qualified commit and dispatch the full distribution workflow
 on that tag. Every wheel, source archive, Conda package, OCI image, and
 Apptainer build fails unless its derived version is exactly the tag name.
 
-Create the private GitHub release only after the tag-ref run succeeds and its
-downloaded artifacts, evidence, and workflow logs pass the final scans. Leave
-Sigstore publication disabled unless the public transparency-log write has
-separate approval. The tag and GitHub release do not authorize a visibility
-change or registry upload.
+After the tag-ref run succeeds, download and verify the exact universal wheel,
+make the repository public, enable and read back private vulnerability
+reporting, and attach only the wheel and its `SHA256SUMS` file to the public
+GitHub release. Leave Sigstore publication disabled. Public GitHub visibility
+and these two release assets do not authorize any registry upload.

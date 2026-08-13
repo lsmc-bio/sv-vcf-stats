@@ -128,6 +128,7 @@ def scan_tree(
     tokens: tuple[TokenDigest, ...],
     *,
     structural: bool,
+    administrative_repository: str | None = None,
 ) -> set[str]:
     findings: set[str] = set()
     for path in sorted(root.rglob("*")):
@@ -138,6 +139,12 @@ def scan_tree(
             continue
         label = str(relative)
         encoded_label = label.encode()
+        if administrative_repository is not None:
+            encoded_label = neutralize_github_administrative_context(
+                administrative_repository,
+                f"source:filename:{label}",
+                encoded_label,
+            )
         if contains_token(encoded_label, tokens) or (
             structural and contains_structural_marker(encoded_label)
         ):
@@ -145,6 +152,12 @@ def scan_tree(
         if not path.is_file():
             continue
         for payload_label, data in _file_payloads(root, path):
+            if administrative_repository is not None:
+                data = neutralize_github_administrative_context(
+                    administrative_repository,
+                    f"source:content:{payload_label}",
+                    data,
+                )
             if contains_token(data, tokens) or (structural and contains_structural_marker(data)):
                 findings.add(f"content:{payload_label}")
     return findings
@@ -155,11 +168,26 @@ def _git(root: Path, *args: str) -> bytes:
     return result.stdout
 
 
-def scan_git(root: Path, tokens: tuple[TokenDigest, ...], *, structural: bool) -> set[str]:
+def scan_git(
+    root: Path,
+    tokens: tuple[TokenDigest, ...],
+    *,
+    structural: bool,
+    administrative_repository: str | None = None,
+) -> set[str]:
     findings: set[str] = set()
     refs = _git(root, "for-each-ref", "--format=%(refname)")
-    messages = _git(root, "log", "--all", "--format=%H%x00%B")
+    # Object IDs are random hexadecimal coordinates, not repository-facing text;
+    # scan message bodies with NUL separators so short token digests cannot
+    # collide with a commit SHA or span adjacent messages.
+    messages = _git(root, "log", "--all", "--format=%B%x00")
     for label, payload in (("git:refs", refs), ("git:messages", messages)):
+        if administrative_repository is not None:
+            payload = neutralize_github_administrative_context(
+                administrative_repository,
+                label,
+                payload,
+            )
         if contains_token(payload, tokens) or (structural and contains_structural_marker(payload)):
             findings.add(label)
     object_lines = _git(root, "rev-list", "--objects", "--all").decode().splitlines()
@@ -167,6 +195,12 @@ def scan_git(root: Path, tokens: tuple[TokenDigest, ...], *, structural: bool) -
         object_id, _, name = line.partition(" ")
         if name:
             name_bytes = name.encode()
+            if administrative_repository is not None:
+                name_bytes = neutralize_github_administrative_context(
+                    administrative_repository,
+                    f"git:filename:{name}",
+                    name_bytes,
+                )
             if contains_token(name_bytes, tokens) or (
                 structural and contains_structural_marker(name_bytes)
             ):
@@ -177,6 +211,12 @@ def scan_git(root: Path, tokens: tuple[TokenDigest, ...], *, structural: bool) -
         if name:
             object_payloads.extend(_expanded_archive_members(object_label, payload))
         for payload_label, object_payload in object_payloads:
+            if administrative_repository is not None:
+                object_payload = neutralize_github_administrative_context(
+                    administrative_repository,
+                    payload_label,
+                    object_payload,
+                )
             if contains_token(object_payload, tokens) or (
                 structural and contains_structural_marker(object_payload)
             ):
@@ -279,6 +319,14 @@ def neutralize_github_administrative_context(
         payload,
         flags=re.IGNORECASE,
     )
+    if label == "git:messages" or re.fullmatch(rb"git:object:[0-9a-f]{40}", label.encode()):
+        normalized = re.sub(
+            rb"(?im)^Merge pull request #[0-9]+ from "
+            + re.escape(owner.encode())
+            + rb"/[a-z0-9._/-]+\r?$",
+            b"Merge pull request {github-source-branch}",
+            normalized,
+        )
     if label.startswith("github:workflow-log:"):
         normalized = re.sub(
             rb"(?i)/(?:home|users)/runner(?=$|[/\s\"':])",
@@ -295,15 +343,28 @@ def main() -> None:
     parser.add_argument("--git", action="store_true")
     parser.add_argument("--github-repository")
     parser.add_argument("--github-administrative-exception", action="store_true")
+    parser.add_argument("--source-github-repository")
     parser.add_argument("--structural", action="store_true")
     args = parser.parse_args()
     if args.github_administrative_exception and not args.github_repository:
         parser.error("--github-administrative-exception requires --github-repository")
     root = args.root.resolve(strict=True)
     tokens = load_policy(args.policy.resolve(strict=True))
-    findings = scan_tree(root, tokens, structural=args.structural)
+    findings = scan_tree(
+        root,
+        tokens,
+        structural=args.structural,
+        administrative_repository=args.source_github_repository,
+    )
     if args.git:
-        findings.update(scan_git(root, tokens, structural=args.structural))
+        findings.update(
+            scan_git(
+                root,
+                tokens,
+                structural=args.structural,
+                administrative_repository=args.source_github_repository,
+            )
+        )
     if args.github_repository:
         for label, payload in github_text(args.github_repository).items():
             scan_payload = (

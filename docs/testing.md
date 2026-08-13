@@ -169,7 +169,8 @@ separate approval gate.
 uv run python tools/scan_tokens.py \
   --root . --policy policy/forbidden-token-hashes.json --git
 uv run python tools/scan_tokens.py \
-  --root . --policy policy/neutrality-token-hashes.json --structural
+  --root . --policy policy/neutrality-token-hashes.json --structural \
+  --source-github-repository lsmc-bio/sv-vcf-stats
 ```
 
 Policies store token lengths and SHA-256 digests, not prohibited plaintext. The
@@ -177,6 +178,10 @@ scanner checks filenames, decoded file contents, nested archives, BCF rendered
 content, refs, commit messages, and every reachable Git object. The release
 audit additionally scans repository metadata, review text, release text, and
 completed workflow logs.
+
+`--source-github-repository` removes only the exact administrative repository
+coordinate before scanning. The owning organization token still fails anywhere
+else, including product names, schemas, runtime output, and ordinary prose.
 
 ## Adding a caller fixture
 
