@@ -177,12 +177,6 @@ jobs:
             --archive /tmp/vcf-sv-stats.oci.tar \
             --output release/oci-audit.json \
             --attestation-dir release/container-attestations
-          syft scan oci-archive:/tmp/vcf-sv-stats.oci.tar \
-            --platform linux/amd64 \
-            -o cyclonedx-json=release/linux-amd64.container.cyclonedx.json
-          syft scan oci-archive:/tmp/vcf-sv-stats.oci.tar \
-            --platform linux/arm64 \
-            -o cyclonedx-json=release/linux-arm64.container.cyclonedx.json
       - name: Run each architecture without network or writable root
         run: |
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
@@ -192,6 +186,8 @@ jobs:
               --tag "vcf-sv-stats:$architecture" \
               --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
               --build-arg "SOURCE_COMMIT=$GITHUB_SHA" .
+            syft "vcf-sv-stats:$architecture" \
+              -o "cyclonedx-json=release/linux-$architecture.container.cyclonedx.json"
             test "$(docker image inspect "vcf-sv-stats:$architecture" --format '{{.Config.User}}')" = app
             test "$(docker image inspect "vcf-sv-stats:$architecture" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" = "$candidate_version"
             docker run --rm --platform "linux/$architecture" \
