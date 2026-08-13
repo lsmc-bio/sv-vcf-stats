@@ -281,7 +281,7 @@ def neutralize_github_administrative_context(
     )
     if label.startswith("github:workflow-log:"):
         normalized = re.sub(
-            rb"(?i)/home/runner(?=$|[/\s\"'])",
+            rb"(?i)/(?:home|users)/runner(?=$|[/\s\"':])",
             b"/github-runner",
             normalized,
         )

@@ -93,11 +93,17 @@ def test_github_administrative_exception_is_narrow() -> None:
     organization = b"hosting-org"
     policy = (_digest(organization),)
     runner_home = b"/" + b"home" + b"/runner"
+    macos_runner_home = b"/" + b"Users" + b"/runner"
     administrative = (
         b"repository hosting-org/project at "
         b"https://github.com/hosting-org/project under "
         + runner_home
         + b"/work/project"
+        + b" and "
+        + macos_runner_home
+        + b"/work/project; chdir "
+        + runner_home
+        + b": no such file"
     )
     normalized = scan_tokens.neutralize_github_administrative_context(
         "hosting-org/project",
@@ -120,6 +126,13 @@ def test_github_administrative_exception_is_narrow() -> None:
             "hosting-org/project",
             "github:workflow-log:7!test.txt",
             b"product output names /" + b"mnt" + b"/private/output",
+        )
+    )
+    assert scan_tokens.contains_structural_marker(
+        scan_tokens.neutralize_github_administrative_context(
+            "hosting-org/project",
+            "github:workflow-log:7!test.txt",
+            runner_home + b"-owned/product-output",
         )
     )
 
