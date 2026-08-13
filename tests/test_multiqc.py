@@ -18,7 +18,7 @@ def _write_summary(path: Path, value: dict[str, object]) -> Path:
     return path
 
 
-def test_multiqc_contract_discovers_signed_summaries_and_deduplicates(
+def test_multiqc_contract_discovers_digest_bound_summaries_and_deduplicates(
     valid_vcf: Path, tmp_path: Path
 ) -> None:
     summary = stats(OperationRequest(valid_vcf)).summary
@@ -30,7 +30,7 @@ def test_multiqc_contract_discovers_signed_summaries_and_deduplicates(
     assert result.duplicate_paths == (second,)
 
 
-def test_multiqc_contract_rejects_unsigned_unknown_major_and_conflicts(
+def test_multiqc_contract_rejects_invalid_digest_unknown_major_and_conflicts(
     valid_vcf: Path, tmp_path: Path
 ) -> None:
     summary = stats(OperationRequest(valid_vcf)).summary

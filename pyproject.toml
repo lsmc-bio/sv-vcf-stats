@@ -85,5 +85,5 @@ packages = ["vcf_sv_stats"]
 exclude = ["src/vcf_sv_stats/_version.py"]
 
 [[tool.mypy.overrides]]
-module = ["pysam.*", "rfc8785.*", "yaml.*"]
+module = ["pysam.*", "rfc8785.*", "vcf_sv_stats._version", "yaml.*"]
 ignore_missing_imports = true

@@ -43,8 +43,8 @@ Date: 2026-08-13
 - Independent validator: bcftools 1.24 with HTSlib 1.24.
 - Git: 2.50.1.
 - GitHub CLI: 2.86.0, authenticated as `iamh2o`.
-- Implementation tests: 56 tests pass on Python 3.11; the 3.11, 3.12, and 3.13 isolated matrices each pass.
-- Coverage: 79 percent branch-aware line coverage, above the configured 70 percent floor.
+- Implementation tests: 64 tests pass on Python 3.11; the 3.11, 3.12, and 3.13 isolated matrices each pass.
+- Coverage: 80 percent branch-aware line coverage, above the configured 70 percent floor.
 
 ### Source VCF digests
 
@@ -143,10 +143,10 @@ Date: 2026-08-13
 | AC-036 | Repeated runs and thread variation preserve canonical payloads and normalized semantic content | SUCCESS | contract_test | Gate 3 | orchestrator | Repeated stats, 1/max-thread payload, normalized-byte tests, and benchmark repetitions |  | Deterministic payloads and normalized bytes match. |
 | AC-037 | Every JSON artifact validates against its exact embedded schema and version policy | SUCCESS | contract_test | Gate 1 | orchestrator | Embedded 2020-12 schemas, artifact tests, unknown schema/major rejection, MultiQC consumer tests |  | Emitted v1 artifacts validate before publication. |
 | AC-038 | Discrepancies output is exhaustive, deterministic, non-mutating, and published before fail-on exit | SUCCESS | contract_test | Gate 1 | orchestrator | JSON/JSONL/TSV count reconciliation, input digest check, CLI fail-on test |  | Report publication precedes policy exit. |
-| AC-039 | Native MultiQC contract discovers only signed summaries, separates identities, and rejects duplicates | BLOCKED | contract_test | Gate 3 | orchestrator | Producer-side `ingest_summaries` contract and duplicate/conflict/schema tests pass | A native upstream module is an external publication action requiring later explicit approval. | Producer boundary is ready; no upstream branch or pull request was created. |
+| AC-039 | Native MultiQC contract discovers only schema-valid, digest-bound summaries, separates identities, and rejects duplicates | BLOCKED | contract_test | Gate 3 | orchestrator | Producer-side `ingest_summaries` contract and duplicate/conflict/schema tests pass | A native upstream module is an external publication action requiring later explicit approval. | Producer boundary is ready; the digest is correctly documented as integrity rather than authentication, and no upstream branch or pull request was created. |
 | AC-040 | Performance matrix demonstrates bounded memory, relative scaling, determinism, and interruption safety | FAIL | contract_test | Gate 3 | orchestrator | `tools/benchmark_streaming.py`; three deterministic runs each on 100-record and 98-record fixtures | The required million/ten-million-record, relative-scaling, RSS, baseline, signal, and crash matrix was not run. | Harness and smoke baseline are committed; qualify on generated neutral large inputs before v1. |
 | AC-041 | Wheel, source archive, and container build offline, run non-root where applicable, and contain no reference | BLOCKED | contract_test | Gate 3 | orchestrator | Reproducible wheel/sdist builds and scans pass; run `31687747018` built the image, ran it read-only and non-root, produced fixture stats, scanned all layers, and found no reference | Distribution-channel recipes, release attestations, multi-architecture proof, and final offline install verification are release activities requiring later explicit approval. | No package or image was published; finish release-target verification only after approval. |
-| AC-042 | Documentation explains record/event scope, VCF sample/analysis unit, adapters, references, losses, privacy, and recovery | SUCCESS | feature_implementation | Gate 3 | orchestrator | README, neutral normative specification, operator guide, fixture governance, and MultiQC integration guide |  | Known pre-1.0 gaps are stated without claiming v1 completion. |
+| AC-042 | Documentation explains record/event scope, VCF sample/analysis unit, adapters, references, losses, privacy, and recovery | SUCCESS | feature_implementation | Gate 3 | orchestrator | Showcase README; documentation map; architecture, command, output, operator, testing, fixture, and MultiQC guides; executable documentation-contract tests |  | README fixture output, relative links, examples, 20 command paths, 13 adapters, corpus totals, and dependency claims are bound to executable evidence; known pre-1.0 gaps remain explicit. |
 
 ## Status updates
 
@@ -160,6 +160,7 @@ Date: 2026-08-13
 - 2026-08-13: Gate 3 local verification passed: 56 tests, Python 3.11 through 3.13, strict type/lint checks, 79 percent coverage, deterministic package builds, SBOM, fixture verifier, and checkout/artifact/Git/GitHub scans.
 - 2026-08-13: The first dependency-review run found a vulnerable test-only dependency. The lock was raised to patched `pytest 9.1.1`; all local checks and the complete seven-job run `31687747018` then passed.
 - 2026-08-13: Gate 4 passed. Post-CI scans found zero matches across product files, artifacts, Git history, GitHub metadata, pull-request text, and completed workflow logs. The private draft pull request is open and no publication action occurred.
+- 2026-08-13: Documentation was upgraded into a public-ready product surface without changing the private pre-1.0 publication boundary. Seven executable documentation tests bind the HG002 README showcase, examples, links, command catalog, adapter matrix, fixture totals, and dependency claims to current behavior. The archive scanner was hardened to inspect decoded members instead of random compressed bytes, raising the suite to 64 tests. Fresh-checkout typing, deterministic wheel/source/SBOM builds, both content scans, fixture verification, bcftools/HTSlib 1.24, and all three Python versions pass locally.
 
 ## Final report
 

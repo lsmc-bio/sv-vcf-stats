@@ -1,0 +1,18 @@
+{
+  "producer": "Manta",
+  "records": 100,
+  "alleles": 100,
+  "events": 97,
+  "breakends": {
+    "reciprocal_pairs": 3,
+    "total": 6,
+    "unresolved_mate_references": 0,
+    "without_declared_mate": 0
+  },
+  "types": {
+    "BND": 6,
+    "DEL": 53,
+    "INS": 37,
+    "UNKNOWN": 4
+  }
+}

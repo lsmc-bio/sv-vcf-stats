@@ -107,13 +107,20 @@ def _expanded_archive_members(
 def _file_payloads(root: Path, path: Path) -> Iterator[tuple[str, bytes]]:
     label = str(path.relative_to(root))
     data = path.read_bytes()
-    yield label, data
+    archive_like = path.suffix in {".gz", ".tgz", ".zip", ".whl"} or ".tar" in path.name
+    if not archive_like and path.suffix != ".bcf":
+        yield label, data
     if path.suffix == ".bcf":
         with pysam.VariantFile(str(path)) as variant:
             rendered = str(variant.header) + "".join(str(record) for record in variant)
         yield f"{label}!decoded", rendered.encode()
-    if path.suffix in {".gz", ".tgz", ".zip", ".whl"} or ".tar" in path.name:
-        yield from _expanded_archive_members(label, data)
+    if archive_like:
+        expanded = False
+        for member in _expanded_archive_members(label, data):
+            expanded = True
+            yield member
+        if not expanded:
+            yield label, data
 
 
 def scan_tree(

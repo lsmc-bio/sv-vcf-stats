@@ -27,7 +27,7 @@ class MultiqcIngestion:
     duplicate_paths: tuple[Path, ...]
 
 
-def _load_signed_summary(path: Path) -> dict[str, Any]:
+def _load_digest_bound_summary(path: Path) -> dict[str, Any]:
     if not path.name.endswith(".vcf-sv-stats.json"):
         raise ValidationFailure(f"MultiQC producer filename does not match: {path.name}")
     try:
@@ -58,7 +58,7 @@ def ingest_summaries(paths: tuple[str | Path, ...]) -> MultiqcIngestion:
     records_by_id: dict[str, MultiqcRecord] = {}
     duplicates: list[Path] = []
     for supplied_path in sorted((Path(path) for path in paths), key=lambda path: str(path)):
-        summary = _load_signed_summary(supplied_path)
+        summary = _load_digest_bound_summary(supplied_path)
         for report in summary["reports"]:
             report_id = str(report.get("report_id", ""))
             if not report_id:

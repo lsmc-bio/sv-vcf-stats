@@ -30,6 +30,18 @@ def test_tree_scanner_reports_only_location_and_scans_archives(tmp_path: Path) -
     assert all(token.decode() not in finding for finding in findings)
 
 
+def test_archive_scanner_does_not_treat_compressed_bytes_as_text(tmp_path: Path) -> None:
+    archive_path = tmp_path / "artifact.whl"
+    payload = io.BytesIO()
+    with zipfile.ZipFile(payload, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("payload.txt", b"semantic archive content")
+    archive_path.write_bytes(payload.getvalue())
+
+    labels = [label for label, _data in scan_tokens._file_payloads(tmp_path, archive_path)]
+
+    assert labels == ["artifact.whl!payload.txt"]
+
+
 def test_tree_scanner_expands_nested_container_layers(tmp_path: Path) -> None:
     token = b"nested-marker"
     inner = io.BytesIO()
