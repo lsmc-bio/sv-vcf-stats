@@ -11,7 +11,7 @@ import tarfile
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, cast
+from typing import IO, Any, cast
 
 from tools.build_sbom import _wheel_version
 from tools.verify_test_data import verify as verify_test_data
@@ -34,7 +34,7 @@ def _file_sha1(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _stream_sha256(handle: BinaryIO) -> str:
+def _stream_sha256(handle: IO[bytes]) -> str:
     digest = hashlib.sha256()
     while chunk := handle.read(1024 * 1024):
         digest.update(chunk)
