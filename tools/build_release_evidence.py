@@ -42,8 +42,9 @@ def _stream_sha256(handle: IO[bytes]) -> str:
 
 
 def _sdist_metadata_member(archive: tarfile.TarFile) -> tuple[str, tarfile.TarInfo]:
+    members = archive.getmembers()
     candidates = []
-    for member in archive.getmembers():
+    for member in members:
         parts = PurePosixPath(member.name).parts
         if len(parts) == 2 and parts[1] == "PKG-INFO":
             candidates.append((parts[0], member))
@@ -56,6 +57,25 @@ def _sdist_metadata_member(archive: tarfile.TarFile) -> tuple[str, tarfile.TarIn
         or not member.isfile()
     ):
         raise UsageError("source archive package root is unsafe")
+    observed: set[str] = set()
+    for archive_member in members:
+        archive_path = PurePosixPath(archive_member.name)
+        canonical_name = archive_path.as_posix()
+        supplied_name = (
+            archive_member.name.rstrip("/") if archive_member.isdir() else archive_member.name
+        )
+        if (
+            not archive_path.parts
+            or archive_path.parts[0] != package_root
+            or ".." in archive_path.parts
+            or supplied_name != canonical_name
+        ):
+            raise UsageError("source archive contains an unsafe member path")
+        if canonical_name in observed:
+            raise UsageError("source archive contains a duplicate member path")
+        observed.add(canonical_name)
+        if not archive_member.isfile() and not archive_member.isdir():
+            raise UsageError("source archive contains a non-regular member")
     return package_root, member
 
 
@@ -65,7 +85,8 @@ def _sdist_version(sdist: Path) -> str:
         handle = archive.extractfile(metadata_member)
         if handle is None:
             raise UsageError("source archive PKG-INFO is unreadable")
-        text = handle.read().decode("utf-8")
+        with handle:
+            text = handle.read().decode("utf-8")
     version_lines = [
         line.partition(":")[2].strip() for line in text.splitlines() if line.startswith("Version:")
     ]
@@ -116,7 +137,11 @@ def _verify_sdist_fixture_tree(sdist: Path, fixture_root: Path) -> None:
                     "source archive fixture corpus does not exactly match reviewed checkout"
                 )
             handle = archive.extractfile(member)
-            if handle is None or _stream_sha256(handle) != expected_entry[1]:
+            if handle is None:
+                raise UsageError("source archive fixture member is unreadable")
+            with handle:
+                observed_digest = _stream_sha256(handle)
+            if observed_digest != expected_entry[1]:
                 raise UsageError(
                     "source archive fixture corpus does not exactly match reviewed checkout"
                 )

@@ -26,6 +26,7 @@ def _candidate_artifacts(
     fixture_overrides: dict[str, bytes] | None = None,
     omitted_fixture: str | None = None,
     extra_fixture: tuple[str, bytes] | None = None,
+    extra_archive_member: tuple[str, bytes] | None = None,
     package_root: str = "vcf_sv_stats-0.2.0",
 ) -> tuple[Path, Path]:
     wheel = directory / "vcf_sv_stats-0.2.0-py3-none-any.whl"
@@ -57,6 +58,11 @@ def _candidate_artifacts(
         if extra_fixture is not None:
             relative, payload = extra_fixture
             member = tarfile.TarInfo(f"{package_root}/test_data/{relative}")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        if extra_archive_member is not None:
+            name, payload = extra_archive_member
+            member = tarfile.TarInfo(name)
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
     return wheel, sdist
@@ -155,6 +161,22 @@ def test_release_evidence_rejects_nonidentical_sdist_fixture_tree(
 def test_release_evidence_rejects_unsafe_sdist_package_root(tmp_path: Path) -> None:
     wheel, sdist = _candidate_artifacts(tmp_path, package_root="..")
     with pytest.raises(UsageError, match="source archive package root is unsafe"):
+        build(
+            wheel=wheel,
+            sdist=sdist,
+            output_dir=tmp_path,
+            source_commit="a" * 40,
+            created="2026-08-13T00:00:00Z",
+            invocation_id="local-test",
+        )
+
+
+def test_release_evidence_rejects_unsafe_member_outside_package_root(tmp_path: Path) -> None:
+    wheel, sdist = _candidate_artifacts(
+        tmp_path,
+        extra_archive_member=("../outside.txt", b"unsafe archive member\n"),
+    )
+    with pytest.raises(UsageError, match="source archive contains an unsafe member path"):
         build(
             wheel=wheel,
             sdist=sdist,
