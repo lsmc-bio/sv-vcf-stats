@@ -256,14 +256,42 @@ def github_text(repository: str) -> dict[str, bytes]:
     return payloads
 
 
+def neutralize_github_administrative_context(
+    repository: str,
+    label: str,
+    payload: bytes,
+) -> bytes:
+    """Remove only provider-owned coordinates from GitHub-facing scan input."""
+
+    owner, separator, name = repository.partition("/")
+    if not separator or not owner or not name or "/" in name:
+        raise ValueError("GitHub repository must use the owner/name form")
+    normalized = re.sub(
+        re.escape(repository.encode()),
+        b"{github-repository}",
+        payload,
+        flags=re.IGNORECASE,
+    )
+    if label.startswith("github:workflow-log:"):
+        normalized = re.sub(
+            rb"(?i)/home/runner(?=$|[/\s\"'])",
+            b"/github-runner",
+            normalized,
+        )
+    return normalized
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--git", action="store_true")
     parser.add_argument("--github-repository")
+    parser.add_argument("--github-administrative-exception", action="store_true")
     parser.add_argument("--structural", action="store_true")
     args = parser.parse_args()
+    if args.github_administrative_exception and not args.github_repository:
+        parser.error("--github-administrative-exception requires --github-repository")
     root = args.root.resolve(strict=True)
     tokens = load_policy(args.policy.resolve(strict=True))
     findings = scan_tree(root, tokens, structural=args.structural)
@@ -271,8 +299,17 @@ def main() -> None:
         findings.update(scan_git(root, tokens, structural=args.structural))
     if args.github_repository:
         for label, payload in github_text(args.github_repository).items():
-            if contains_token(payload, tokens) or (
-                args.structural and contains_structural_marker(payload)
+            scan_payload = (
+                neutralize_github_administrative_context(
+                    args.github_repository,
+                    label,
+                    payload,
+                )
+                if args.github_administrative_exception
+                else payload
+            )
+            if contains_token(scan_payload, tokens) or (
+                args.structural and contains_structural_marker(scan_payload)
             ):
                 findings.add(label)
     if findings:

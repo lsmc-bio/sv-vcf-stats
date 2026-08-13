@@ -77,6 +77,41 @@ def test_github_scanner_includes_completed_workflow_logs(
     assert payloads["github:workflow-log:7!test.txt"] == b"neutral workflow output"
 
 
+def test_github_administrative_exception_is_narrow() -> None:
+    organization = b"hosting-org"
+    policy = (_digest(organization),)
+    runner_home = b"/" + b"home" + b"/runner"
+    administrative = (
+        b"repository hosting-org/project at "
+        b"https://github.com/hosting-org/project under "
+        + runner_home
+        + b"/work/project"
+    )
+    normalized = scan_tokens.neutralize_github_administrative_context(
+        "hosting-org/project",
+        "github:workflow-log:7!test.txt",
+        administrative,
+    )
+
+    assert not scan_tokens.contains_token(normalized, policy)
+    assert not scan_tokens.contains_structural_marker(normalized)
+    assert scan_tokens.contains_token(
+        scan_tokens.neutralize_github_administrative_context(
+            "hosting-org/project",
+            "github:issues",
+            b"product output names hosting-org without a repository coordinate",
+        ),
+        policy,
+    )
+    assert scan_tokens.contains_structural_marker(
+        scan_tokens.neutralize_github_administrative_context(
+            "hosting-org/project",
+            "github:workflow-log:7!test.txt",
+            b"product output names /" + b"mnt" + b"/private/output",
+        )
+    )
+
+
 def test_github_json_handles_root_endpoint_and_flattens_pages(monkeypatch: Any) -> None:
     calls: list[tuple[str, ...]] = []
 
