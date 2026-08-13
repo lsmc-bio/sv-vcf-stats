@@ -41,7 +41,7 @@ def _candidate_artifacts(
         member = tarfile.TarInfo(f"{package_root}/PKG-INFO")
         member.size = len(pkg_info)
         archive.addfile(member, io.BytesIO(pkg_info))
-        nested = tarfile.TarInfo("vcf_sv_stats-0.2.0/src/vcf_sv_stats.egg-info/PKG-INFO")
+        nested = tarfile.TarInfo(f"{package_root}/src/vcf_sv_stats.egg-info/PKG-INFO")
         nested_payload = pkg_info.replace(b"Version: 0.2.0", b"Version: 9.9.9")
         nested.size = len(nested_payload)
         archive.addfile(nested, io.BytesIO(nested_payload))
@@ -185,3 +185,19 @@ def test_release_evidence_rejects_unsafe_member_outside_package_root(tmp_path: P
             created="2026-08-13T00:00:00Z",
             invocation_id="local-test",
         )
+
+
+def test_release_evidence_accepts_safe_local_version_package_root(tmp_path: Path) -> None:
+    wheel, sdist = _candidate_artifacts(
+        tmp_path,
+        package_root="vcf_sv_stats-0.2.0.dev1+g012345678",
+    )
+    result = build(
+        wheel=wheel,
+        sdist=sdist,
+        output_dir=tmp_path,
+        source_commit="a" * 40,
+        created="2026-08-13T00:00:00Z",
+        invocation_id="local-test",
+    )
+    assert result["provenance"].is_file()

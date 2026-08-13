@@ -52,7 +52,7 @@ def _sdist_metadata_member(archive: tarfile.TarFile) -> tuple[str, tarfile.TarIn
         raise UsageError("source archive must contain exactly one PKG-INFO")
     package_root, member = candidates[0]
     if (
-        re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", package_root) is None
+        re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", package_root) is None
         or member.name != f"{package_root}/PKG-INFO"
         or not member.isfile()
     ):
