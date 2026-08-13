@@ -41,7 +41,7 @@ jobs:
       - name: Build the exact wheel and source archive
         run: |
           uv sync --locked --all-extras --python "${{ matrix.python-version }}"
-          candidate_version=$(uv run python -m setuptools_scm)
+          candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
           if test "$GITHUB_REF_TYPE" = tag; then
             test "$candidate_version" = "$GITHUB_REF_NAME"
           fi
