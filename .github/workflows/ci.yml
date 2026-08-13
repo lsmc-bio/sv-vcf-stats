@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+          enable-cache: true
+      - run: uv sync --locked --all-extras --python "${{ matrix.python-version }}"
+      - run: uv run ruff check .
+      - run: uv run mypy src/vcf_sv_stats
+      - run: uv run pytest -q
+      - run: uv run python tools/verify_test_data.py --test-data-dir test_data
+      - run: >-
+          uv run python tools/benchmark_streaming.py
+          --input test_data/vcf/manta.native.hg002.subset.vcf.gz
+          --output /tmp/streaming-benchmark.json --repetitions 2
+      - run: >-
+          uv run python tools/scan_tokens.py --root .
+          --policy policy/forbidden-token-hashes.json --git
+      - run: >-
+          uv run python tools/scan_tokens.py --root .
+          --policy policy/neutrality-token-hashes.json --structural
+
+  package:
+    name: Package and artifact audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - run: uv sync --locked --all-extras --python 3.11
+      - name: Verify exported runtime lock
+        run: |
+          uv export --locked --no-dev --no-emit-project --no-hashes \
+            --output-file /tmp/requirements.lock.txt
+          tail -n +3 requirements.lock.txt > /tmp/requirements.expected.txt
+          tail -n +3 /tmp/requirements.lock.txt > /tmp/requirements.actual.txt
+          diff -u /tmp/requirements.expected.txt /tmp/requirements.actual.txt
+      - run: SOURCE_DATE_EPOCH=315532800 uv build
+      - run: >-
+          uv run python tools/normalize_sdist.py
+          --sdist dist/*.tar.gz --epoch 315532800
+      - run: >-
+          uv run python tools/build_sbom.py
+          --wheel dist/*.whl --output dist/sbom.json
+      - run: >-
+          uv run python tools/scan_tokens.py --root .
+          --policy policy/forbidden-token-hashes.json --git
+      - run: >-
+          uv run python tools/scan_tokens.py --root .
+          --policy policy/neutrality-token-hashes.json --structural
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  container-audit:
+    name: Container runtime and layer audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - run: uv sync --locked --all-extras --python 3.11
+      - name: Build the final runtime image
+        run: docker build --tag vcf-sv-stats:ci .
+      - name: Exercise a read-only non-root runtime
+        run: |
+          set -euo pipefail
+          test "$(docker image inspect vcf-sv-stats:ci --format '{{.Config.User}}')" = "app"
+          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            vcf-sv-stats:ci info
+          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            --volume "$PWD/test_data:/input:ro" \
+            vcf-sv-stats:ci stats \
+            /input/vcf/manta.native.hg002.subset.vcf.gz \
+            --output /tmp/summary.json
+      - name: Audit every reachable image layer
+        run: |
+          set -euo pipefail
+          mkdir /tmp/container-audit
+          docker save --output /tmp/container-audit/image.tar vcf-sv-stats:ci
+          uv run python tools/scan_tokens.py \
+            --root /tmp/container-audit \
+            --policy policy/forbidden-token-hashes.json
+          container_id=$(docker create vcf-sv-stats:ci)
+          trap 'docker rm "$container_id" >/dev/null 2>&1 || true' EXIT
+          docker export --output /tmp/container-audit/rootfs.tar "$container_id"
+          if tar -tf /tmp/container-audit/rootfs.tar \
+            | grep -Eiq '(^|/)reference\.(fa|fasta|fna)([./]|$)'; then
+            echo "A reference-like path was found in the image filesystem" >&2
+            exit 1
+          fi
+
+  htslib-124:
+    name: HTSlib 1.24 independent validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: htslib-124
+          cache-environment: true
+          create-args: >-
+            bcftools=1.24
+            -c conda-forge
+            -c bioconda
+      - name: Validate version and every compressed fixture
+        shell: bash -el {0}
+        run: |
+          set -euo pipefail
+          bcftools --version | grep -F 'bcftools 1.24'
+          while IFS= read -r path; do
+            bcftools view --no-version --output-type u "$path" >/dev/null
+            bcftools index --stats "$path" >/dev/null
+          done < <(find test_data/vcf -name '*.vcf.gz' -type f -print | sort)
+          bcftools view --no-version --output-type u \
+            test_data/vcf/truvari.query.hg002.subset.vcf >/dev/null
+          bcftools view --no-version --output-type u \
+            test_data/vcf/manta.native.hg002.subset.bcf >/dev/null
+          bcftools index --stats \
+            test_data/vcf/manta.native.hg002.subset.bcf >/dev/null
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4

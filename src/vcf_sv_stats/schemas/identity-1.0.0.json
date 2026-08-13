@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:identity:1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "analysis_units"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.identity"},
+    "schema_version": {"const": "1.0.0"},
+    "analysis_units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["analysis_unit_id", "mapped_vcf_sample_ids"],
+        "properties": {
+          "analysis_unit_id": {"type": "string", "minLength": 1},
+          "display_id": {"type": ["string", "null"]},
+          "algorithm_id": {"type": ["string", "null"]},
+          "mapped_vcf_sample_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "external_identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["namespace", "value"],
+              "properties": {
+                "namespace": {"type": "string", "minLength": 1},
+                "value": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

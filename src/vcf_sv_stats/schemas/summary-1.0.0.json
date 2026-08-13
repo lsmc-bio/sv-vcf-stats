@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:summary:1.0.0",
+  "title": "vcf-sv-stats summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "content_signature", "producer", "input", "callset", "validation", "statistics", "reports", "payload_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.summary"},
+    "schema_version": {"const": "1.0.0"},
+    "content_signature": {"const": "vcf-sv-stats:summary:1"},
+    "producer": {"$ref": "#/$defs/producer"},
+    "input": {"type": "object"},
+    "callset": {"type": "object"},
+    "validation": {"type": "object"},
+    "statistics": {"type": "object"},
+    "reports": {"type": "array", "items": {"type": "object"}},
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "execution": {"type": ["object", "null"]}
+  },
+  "$defs": {
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "vcf-sv-stats"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

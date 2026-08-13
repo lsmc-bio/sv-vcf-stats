@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:discrepancies:1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "content_signature", "input", "counts", "diagnostics", "complete"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.discrepancies"},
+    "schema_version": {"const": "1.0.0"},
+    "content_signature": {"const": "vcf-sv-stats:discrepancies:1"},
+    "input": {"type": "object"},
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "diagnostics": {"type": "array", "items": {"type": "object"}},
+    "complete": {"type": "boolean"}
+  }
+}

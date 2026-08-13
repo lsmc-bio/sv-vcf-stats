@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:receipt:1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "request_sha256", "manifest", "artifacts"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.receipt"},
+    "schema_version": {"const": "1.0.0"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifest": {"type": "object"},
+    "artifacts": {"type": "array", "items": {"type": "object"}}
+  }
+}

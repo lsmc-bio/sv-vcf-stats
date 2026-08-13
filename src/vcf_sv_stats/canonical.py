@@ -1,0 +1,615 @@
+"""Streaming canonical observations, diagnostics, event resolution, and aggregates."""
+
+from __future__ import annotations
+
+import math
+from collections import Counter
+from collections.abc import Iterator
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from .events import EventStore
+from .exceptions import InputError
+from .io import (
+    has_variant_index,
+    materialize_input,
+    open_variant,
+    parse_regions,
+    record_in_regions,
+)
+from .models import CanonicalObservation, Diagnostic, Fixability, OperationRequest, Severity
+
+
+@dataclass(frozen=True, slots=True)
+class ScanResult:
+    header: dict[str, Any]
+    callset: dict[str, Any]
+    statistics: dict[str, Any]
+    diagnostics: tuple[Diagnostic, ...]
+    complete: bool
+
+
+LENGTH_BINS: tuple[tuple[int, int | None], ...] = (
+    (0, 50),
+    (50, 100),
+    (100, 500),
+    (500, 1_000),
+    (1_000, 5_000),
+    (5_000, 10_000),
+    (10_000, 50_000),
+    (50_000, 100_000),
+    (100_000, 1_000_000),
+    (1_000_000, 10_000_000),
+    (10_000_000, None),
+)
+
+
+def _first_info(record: Any, key: str, allele_index: int = 0) -> Any:
+    if key not in record.info:
+        return None
+    value = record.info[key]
+    if isinstance(value, tuple):
+        if not value:
+            return None
+        return value[min(allele_index, len(value) - 1)]
+    return value
+
+
+def classify_allele(record: Any, alt: str, allele_index: int) -> tuple[str, str]:
+    if "[" in alt or "]" in alt:
+        return "BND", "breakend"
+    if alt.startswith(".") or alt.endswith("."):
+        return "SINGLE_BND", "single_breakend"
+    if alt.startswith("<") and alt.endswith(">"):
+        symbolic = alt[1:-1].upper()
+        if symbolic in {"DEL", "DUP", "INS", "INV", "CNV", "BND", "TRA"}:
+            return symbolic, "symbolic"
+        if symbolic in {"NON_REF", "*"}:
+            return "NON_SV", "symbolic"
+        return "UNKNOWN", "symbolic"
+    declared = _first_info(record, "SVTYPE", allele_index)
+    if isinstance(declared, str) and declared.upper() in {
+        "DEL",
+        "DUP",
+        "INS",
+        "INV",
+        "CNV",
+        "BND",
+        "TRA",
+    }:
+        return declared.upper(), "sequence"
+    delta = len(alt) - len(record.ref)
+    if abs(delta) >= 50:
+        return ("INS" if delta > 0 else "DEL"), "sequence"
+    return "NON_SV", "sequence"
+
+
+def allele_length(record: Any, alt: str, allele_index: int, variant_type: str) -> int | None:
+    value = _first_info(record, "SVLEN", allele_index)
+    if isinstance(value, int):
+        return abs(value)
+    if isinstance(value, float) and math.isfinite(value):
+        return abs(int(value))
+    if variant_type in {"DEL", "DUP", "INV", "CNV"} and record.stop is not None:
+        return abs(int(record.stop) - int(record.pos) + 1)
+    if variant_type == "INS" and not alt.startswith("<"):
+        return abs(len(alt) - len(record.ref))
+    return None
+
+
+def _histogram(lengths: list[int]) -> dict[str, Any]:
+    counts: list[int] = []
+    for lower, upper in LENGTH_BINS:
+        counts.append(
+            sum(1 for value in lengths if value >= lower and (upper is None or value < upper))
+        )
+    return {
+        "policy_id": "vss-bins/1",
+        "boundaries": [[lower, upper] for lower, upper in LENGTH_BINS],
+        "counts": counts,
+        "n": len(lengths),
+        "minimum": min(lengths) if lengths else None,
+        "maximum": max(lengths) if lengths else None,
+        "missing": 0,
+        "invalid": 0,
+        "not_applicable": 0,
+    }
+
+
+def _numeric_histogram(values: list[float], boundaries: tuple[float, ...]) -> dict[str, Any]:
+    counts = [0 for _ in boundaries]
+    for value in values:
+        for index, lower in enumerate(boundaries):
+            upper = boundaries[index + 1] if index + 1 < len(boundaries) else None
+            if value >= lower and (upper is None or value < upper):
+                counts[index] += 1
+                break
+    return {
+        "boundaries": [
+            [lower, boundaries[index + 1] if index + 1 < len(boundaries) else None]
+            for index, lower in enumerate(boundaries)
+        ],
+        "counts": counts,
+        "n": len(values),
+        "minimum": min(values) if values else None,
+        "maximum": max(values) if values else None,
+    }
+
+
+def _raw_filter_state(record: Any) -> tuple[str, tuple[str, ...]]:
+    raw_filter = str(record).split("\t", 7)[6]
+    keys = tuple(str(key) for key in record.filter)
+    if raw_filter == ".":
+        return "missing", keys
+    if not keys:
+        return "unfiltered", keys
+    if keys == ("PASS",):
+        return "PASS", keys
+    return "filtered_any", keys
+
+
+def _mate_ids(record: Any) -> tuple[str, ...]:
+    value = record.info.get("MATEID") if "MATEID" in record.info else ()
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, tuple):
+        return tuple(str(item) for item in value)
+    return ()
+
+
+def iter_canonical(request: OperationRequest) -> Iterator[CanonicalObservation]:
+    """Yield immutable, source-ordered allele observations without materializing records."""
+    regions = parse_regions(request.regions)
+    with (
+        materialize_input(
+            request.input_path,
+            temp_dir=request.temp_dir,
+            max_input_bytes=request.max_input_bytes,
+            max_uncompressed_bytes=request.max_uncompressed_bytes,
+        ) as path,
+        open_variant(path) as variant,
+    ):
+        if regions and not request.regions_scan and not has_variant_index(path):
+            raise InputError("Regional iteration requires an index or explicit regions_scan")
+        for record_ordinal, record in enumerate(variant, start=1):
+            if not record_in_regions(record, regions):
+                continue
+            filter_state, _keys = _raw_filter_state(record)
+            mate_ids = _mate_ids(record)
+            event_value = record.info.get("EVENT") if "EVENT" in record.info else None
+            original = _first_info(record, "SVTYPE")
+            for allele_index, alt in enumerate(record.alts or ()):
+                normalized_type, representation = classify_allele(record, alt, allele_index)
+                yield CanonicalObservation(
+                    source_record_ordinal=record_ordinal,
+                    allele_ordinal=allele_index + 1,
+                    chrom=str(record.contig),
+                    pos=int(record.pos),
+                    record_id=None if record.id in {None, "."} else str(record.id),
+                    original_svtype=(str(original) if original is not None else None),
+                    normalized_type=normalized_type,
+                    representation=representation,
+                    length_bp=allele_length(record, alt, allele_index, normalized_type),
+                    filter_state=filter_state,
+                    mate_ids=mate_ids,
+                    event_id=(None if event_value in {None, "."} else str(event_value)),
+                )
+
+
+def scan_variant(
+    path: str | Path,
+    *,
+    temp_dir: str | Path | None = None,
+    max_records: int | None = None,
+    adapter_id: str | None = None,
+    regions: tuple[str, ...] = (),
+    regions_scan: bool = False,
+) -> ScanResult:
+    diagnostics: list[Diagnostic] = []
+    record_count = 0
+    allele_count = 0
+    non_sv_records = 0
+    multiallelic = 0
+    missing_qual = 0
+    type_counts: Counter[str] = Counter()
+    representation_counts: Counter[str] = Counter()
+    filter_counts: Counter[str] = Counter()
+    genotype_counts: Counter[str] = Counter()
+    copy_number_counts: Counter[str] = Counter()
+    cnv_genotype_states: Counter[str] = Counter()
+    lengths: list[int] = []
+    qual_values: list[float] = []
+    copy_number_quality_values: list[float] = []
+    length_missing = 0
+    simple_events = 0
+    parsed_regions = parse_regions(regions)
+    complete = not parsed_regions
+
+    try:
+        variant = open_variant(path)
+        if parsed_regions and not regions_scan and not has_variant_index(path):
+            variant.close()
+            raise InputError("Regional operation requires an index or explicit regions_scan")
+        samples = tuple(variant.header.samples)
+        header_text = str(variant.header)
+        header = {
+            "vcf_version": str(variant.header.version),
+            "samples": list(samples),
+            "sample_count": len(samples),
+            "contig_count": len(variant.header.contigs),
+            "info_fields": sorted(variant.header.info),
+            "format_fields": sorted(variant.header.formats),
+            "filter_fields": sorted(variant.header.filters),
+            "text": header_text,
+        }
+        reserved_expectations = {
+            "GQ": (variant.header.formats, "Integer", None),
+            "PS": (variant.header.formats, "Integer", None),
+            "AF": (variant.header.info, None, "A"),
+        }
+        for field_name, (
+            collection,
+            expected_type,
+            expected_number,
+        ) in reserved_expectations.items():
+            if field_name not in collection:
+                continue
+            definition = collection[field_name]
+            type_invalid = expected_type is not None and definition.type != expected_type
+            number_invalid = expected_number is not None and definition.number != expected_number
+            if type_invalid or number_invalid:
+                diagnostics.append(
+                    Diagnostic(
+                        "VSS-HEADER-RESERVED-DECLARATION",
+                        Severity.ERROR,
+                        "vcf_conformance",
+                        f"Reserved field {field_name} has a nonstandard declaration",
+                        field_name=field_name,
+                        specification="VCF field declaration",
+                        fixability=Fixability.REQUIRES_ADAPTER,
+                        blocks_normalization=True,
+                        adapter_id=adapter_id,
+                    )
+                )
+        with variant, EventStore(temp_dir) as events:
+            for source_ordinal, record in enumerate(variant, start=1):
+                if not record_in_regions(record, parsed_regions):
+                    continue
+                record_count += 1
+                if max_records is not None and record_count > max_records:
+                    record_count -= 1
+                    complete = False
+                    break
+                alts = tuple(record.alts or ())
+                if len(alts) > 1:
+                    multiallelic += 1
+                if record.qual is None:
+                    missing_qual += 1
+                else:
+                    qual_values.append(float(record.qual))
+                filter_state, filter_keys = _raw_filter_state(record)
+                if filter_state == "missing":
+                    filter_counts["missing"] += 1
+                elif filter_state == "unfiltered":
+                    filter_counts["unfiltered"] += 1
+                elif filter_state == "PASS":
+                    filter_counts["PASS"] += 1
+                else:
+                    filter_counts["filtered_any"] += 1
+                    filter_counts.update(filter_keys)
+
+                raw_info = str(record).split("\t", 8)[7]
+                raw_values = {
+                    item.partition("=")[0]: item.partition("=")[2]
+                    for item in raw_info.split(";")
+                    if "=" in item
+                }
+                for field_name, raw_value in raw_values.items():
+                    if field_name not in variant.header.info:
+                        continue
+                    number = variant.header.info[field_name].number
+                    observed = len(raw_value.split(","))
+                    expected = (
+                        len(record.alts or ())
+                        if number == "A"
+                        else len(record.alts or ()) + 1
+                        if number == "R"
+                        else int(number)
+                        if isinstance(number, int)
+                        else None
+                    )
+                    if expected is not None and observed != expected:
+                        diagnostics.append(
+                            Diagnostic(
+                                "VSS-CARDINALITY-INFO",
+                                Severity.ERROR,
+                                "vcf_conformance",
+                                f"INFO field cardinality is {observed}; expected {expected}",
+                                source_ordinal,
+                                record.contig,
+                                record.pos,
+                                field_name,
+                                "VCF INFO Number declaration",
+                                Fixability.REQUIRES_ADAPTER,
+                                blocks_normalization=True,
+                                adapter_id=adapter_id,
+                            )
+                        )
+
+                record_has_sv = False
+                record_has_bnd = False
+                record_has_cnv = False
+                for allele_index, alt in enumerate(alts):
+                    allele_count += 1
+                    variant_type, representation = classify_allele(record, alt, allele_index)
+                    type_counts[variant_type] += 1
+                    representation_counts[representation] += 1
+                    if variant_type != "NON_SV":
+                        record_has_sv = True
+                    if variant_type == "CNV":
+                        record_has_cnv = True
+                    if variant_type in {"BND", "SINGLE_BND"}:
+                        record_has_bnd = True
+                        declared = _first_info(record, "SVTYPE", allele_index)
+                        if isinstance(declared, str) and declared.upper() not in {
+                            "BND",
+                            "TRA",
+                        }:
+                            diagnostics.append(
+                                Diagnostic(
+                                    "VSS-BND-ALT-TYPE-CONFLICT",
+                                    Severity.ERROR,
+                                    "breakend",
+                                    "Bracket breakend ALT conflicts with the declared type",
+                                    source_ordinal,
+                                    record.contig,
+                                    record.pos,
+                                    "SVTYPE",
+                                    "VCF 4.5 breakend alleles",
+                                    Fixability.REQUIRES_ADAPTER,
+                                    blocks_normalization=True,
+                                    adapter_id=adapter_id,
+                                )
+                            )
+                    elif variant_type != "NON_SV":
+                        simple_events += 1
+                        declared = _first_info(record, "SVTYPE", allele_index)
+                        if (
+                            isinstance(declared, str)
+                            and declared.upper() != variant_type
+                            and variant_type != "UNKNOWN"
+                        ):
+                            diagnostics.append(
+                                Diagnostic(
+                                    "VSS-ALT-TYPE-CONFLICT",
+                                    Severity.ERROR,
+                                    "sv_semantics",
+                                    "ALT representation conflicts with the declared type",
+                                    source_ordinal,
+                                    record.contig,
+                                    record.pos,
+                                    "SVTYPE",
+                                    "VCF symbolic allele semantics",
+                                    Fixability.REQUIRES_ADAPTER,
+                                    blocks_normalization=True,
+                                    adapter_id=adapter_id,
+                                )
+                            )
+                    length = allele_length(record, alt, allele_index, variant_type)
+                    if length is not None:
+                        lengths.append(length)
+                    elif variant_type not in {"BND", "SINGLE_BND", "TRA", "NON_SV"}:
+                        length_missing += 1
+                if not record_has_sv:
+                    non_sv_records += 1
+
+                mate_ids = _mate_ids(record)
+                event_value = record.info.get("EVENT") if "EVENT" in record.info else None
+                event_id = str(event_value) if event_value not in {None, "."} else None
+                record_id = record.id if record.id not in {None, "."} else None
+                events.add(
+                    source_ordinal,
+                    record_id,
+                    event_id,
+                    mate_ids,
+                    is_bnd=record_has_bnd,
+                )
+
+                record_genotype_states: list[str] = []
+                for sample in samples:
+                    call = record.samples[sample]
+                    gt = call.get("GT")
+                    if gt is None or not gt or any(value is None for value in gt):
+                        genotype_counts["no_call"] += 1
+                        record_genotype_states.append("unresolved")
+                        if gt and any(value is not None for value in gt):
+                            genotype_counts["partially_missing"] += 1
+                    elif all(value == 0 for value in gt):
+                        genotype_counts["reference"] += 1
+                        record_genotype_states.append("reference")
+                    elif len(gt) == 2 and gt[0] == gt[1] and gt[0] > 0:
+                        genotype_counts["homozygous_alt"] += 1
+                        record_genotype_states.append("alternate")
+                    elif any(value > 0 for value in gt):
+                        genotype_counts["heterozygous_or_other_alt"] += 1
+                        record_genotype_states.append("alternate")
+                    else:
+                        genotype_counts["other"] += 1
+                        record_genotype_states.append("unresolved")
+                    genotype_counts["phased" if call.phased else "unphased"] += 1
+                    if gt:
+                        genotype_counts[f"ploidy:{len(gt)}"] += 1
+                    copy_number = call.get("CN")
+                    if copy_number is None:
+                        copy_number_counts["missing"] += 1
+                    elif isinstance(copy_number, int) and 0 <= copy_number <= 8:
+                        copy_number_counts[str(copy_number)] += 1
+                    elif isinstance(copy_number, int) and copy_number >= 9:
+                        copy_number_counts["9+"] += 1
+                    elif isinstance(copy_number, (int, float)):
+                        copy_number_counts["noninteger"] += 1
+                    else:
+                        copy_number_counts["invalid"] += 1
+                    copy_number_quality = call.get("CNQ")
+                    if isinstance(copy_number_quality, (int, float)) and math.isfinite(
+                        copy_number_quality
+                    ):
+                        copy_number_quality_values.append(float(copy_number_quality))
+                if record_has_cnv:
+                    if "alternate" in record_genotype_states:
+                        cnv_genotype_states["alternate"] += 1
+                    elif record_genotype_states and all(
+                        state == "reference" for state in record_genotype_states
+                    ):
+                        cnv_genotype_states["reference_segment"] += 1
+                    else:
+                        cnv_genotype_states["unresolved"] += 1
+
+            graph = events.summarize()
+    except (OSError, ValueError, KeyError) as exc:
+        raise InputError(f"VCF/BCF parsing failed: {exc}") from exc
+
+    for _duplicate_id, count in graph["duplicate_ids"]:
+        diagnostics.append(
+            Diagnostic(
+                "VSS-ID-DUPLICATE",
+                Severity.ERROR,
+                "vcf_conformance",
+                f"A record identifier is duplicated {count} times",
+                field_name="ID",
+                fixability=Fixability.REQUIRES_ADAPTER,
+                blocks_normalization=True,
+                adapter_id=adapter_id,
+            )
+        )
+    if graph["unresolved_mate_references"]:
+        diagnostics.append(
+            Diagnostic(
+                "VSS-BND-MATE-UNRESOLVED",
+                Severity.ERROR,
+                "event_graph",
+                f"Unresolved MATEID references: {graph['unresolved_mate_references']}",
+                field_name="MATEID",
+                fixability=Fixability.REQUIRES_SOURCE_EVIDENCE,
+                blocks_normalization=True,
+                adapter_id=adapter_id,
+            )
+        )
+    if graph["bnd_without_mate"]:
+        diagnostics.append(
+            Diagnostic(
+                "VSS-BND-RELATIONSHIP-UNDECLARED",
+                Severity.WARNING,
+                "event_graph",
+                f"Breakend records without MATEID: {graph['bnd_without_mate']}",
+                field_name="MATEID",
+                fixability=Fixability.REQUIRES_SOURCE_EVIDENCE,
+                adapter_id=adapter_id,
+            )
+        )
+
+    callset = {
+        "vcf_sample_ids": list(samples),
+        "single_sample": len(samples) == 1,
+        "record_count": record_count,
+        "allele_count": allele_count,
+    }
+    statistics = {
+        "histogram_policy": "vss-bins/1",
+        "metric_contracts": {
+            "alleles": {
+                "scope": "alternate_allele",
+                "denominator": "all_parsed_alternate_alleles",
+                "unit": "alleles",
+                "comparability": "canonical-observation/1",
+            },
+            "breakends": {
+                "scope": "breakend_observation",
+                "denominator": "all_bracket_and_single_breakend_alleles",
+                "unit": "breakends",
+                "comparability": "event-resolution/1",
+            },
+            "copy_number": {
+                "scope": "vcf_sample_call",
+                "denominator": "all_parsed_sample_calls",
+                "unit": "declared_copy_number",
+                "comparability": "declared-cn/1",
+            },
+            "events": {
+                "scope": "resolved_event",
+                "denominator": "simple_events_and_resolvable_relationship_groups",
+                "unit": "events",
+                "comparability": "event-resolution/1",
+            },
+            "filters": {
+                "scope": "source_record",
+                "denominator": "all_parsed_source_records",
+                "unit": "records",
+                "comparability": "vcf-filter-state/1",
+            },
+            "genotypes": {
+                "scope": "vcf_sample_call",
+                "denominator": "all_parsed_sample_calls",
+                "unit": "sample_calls",
+                "comparability": "vcf-genotype-state/1",
+            },
+            "length_bp": {
+                "scope": "alternate_allele",
+                "denominator": "alleles_with_applicable_length",
+                "unit": "base_pairs",
+                "comparability": "vss-bins/1",
+            },
+            "qual": {
+                "scope": "source_record",
+                "denominator": "all_parsed_source_records",
+                "unit": "vcf_qual",
+                "comparability": "declared-qual/1",
+            },
+            "source_records": {
+                "scope": "source_record",
+                "denominator": "all_parsed_source_records",
+                "unit": "records",
+                "comparability": "canonical-observation/1",
+            },
+        },
+        "source_records": {
+            "total": record_count,
+            "non_sv_records": non_sv_records,
+            "multiallelic_records": multiallelic,
+            "missing_qual_records": missing_qual,
+        },
+        "alleles": {"total": allele_count, "types": dict(sorted(type_counts.items()))},
+        "representations": dict(sorted(representation_counts.items())),
+        "filters": dict(sorted(filter_counts.items())),
+        "genotypes": dict(sorted(genotype_counts.items())),
+        "breakends": {
+            "total": graph["bnd_total"],
+            "reciprocal_pairs": graph["reciprocal_pairs"],
+            "without_declared_mate": graph["bnd_without_mate"],
+            "unresolved_mate_references": graph["unresolved_mate_references"],
+        },
+        "events": {"resolved": graph["resolved_events"] + simple_events},
+        "length_bp": {**_histogram(lengths), "missing": length_missing},
+        "qual": {
+            **_numeric_histogram(qual_values, (0, 10, 20, 30, 50, 100, 200, 500, 1_000)),
+            "missing": missing_qual,
+            "invalid": 0,
+        },
+        "copy_number": dict(sorted(copy_number_counts.items())),
+        "copy_number_quality": {
+            **_numeric_histogram(
+                copy_number_quality_values,
+                (0, 10, 20, 30, 50, 100, 200, 500, 1_000),
+            ),
+            "missing": max(0, record_count * len(samples) - len(copy_number_quality_values)),
+            "invalid": 0,
+        },
+        "copy_number_interpretation": {
+            "baseline_status": "unavailable",
+            "reason": "no_explicit_baseline_context",
+            "cnv_records_by_genotype_state": dict(sorted(cnv_genotype_states.items())),
+            "gain_loss_neutral_inference": "not_performed",
+        },
+    }
+    return ScanResult(header, callset, statistics, tuple(diagnostics), complete)

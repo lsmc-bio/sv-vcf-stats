@@ -1,0 +1,6 @@
+vcf-sv-stats
+Copyright 2026 vcf-sv-stats contributors
+
+This product includes no reference genome. The minimized HG002 test fixtures
+are attributed separately in test_data/NOTICE.md and are not covered merely by
+the software license.

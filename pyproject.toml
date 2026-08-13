@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools==84.0.0", "setuptools-scm==10.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vcf-sv-stats"
+dynamic = ["version"]
+description = "Standards-aware structural-variant and copy-number VCF statistics"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "vcf-sv-stats contributors" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "cli-core-yo==2.1.1",
+  "jsonschema>=4.23,<5",
+  "pysam==0.24.0",
+  "PyYAML>=6.0.2,<7",
+  "rfc8785>=0.1.4,<1",
+  "typer>=0.21,<0.22",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2",
+  "coverage[toml]>=7.6,<8",
+  "cyclonedx-bom>=7,<8",
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+  "ruff>=0.11,<1",
+  "types-jsonschema>=4.23",
+  "types-PyYAML>=6.0.12",
+]
+
+[project.scripts]
+vcf-sv-stats = "vcf_sv_stats.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vcf_sv_stats = ["data/*.yaml", "schemas/*.json"]
+
+[tool.setuptools_scm]
+fallback_version = "0.1.0.dev0"
+version_file = "src/vcf_sv_stats/_version.py"
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["vcf_sv_stats"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["src/vcf_sv_stats/_version.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["vcf_sv_stats"]
+exclude = ["src/vcf_sv_stats/_version.py"]
+
+[[tool.mypy.overrides]]
+module = ["pysam.*", "rfc8785.*", "yaml.*"]
+ignore_missing_imports = true

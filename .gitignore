@@ -1,0 +1,13 @@
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+build/
+dist/
+*.egg-info/
+src/vcf_sv_stats/_version.py
+*.py[cod]
+*.swp
+.DS_Store

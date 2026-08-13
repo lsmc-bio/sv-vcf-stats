@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the software release."
+title: "vcf-sv-stats"
+type: software
+authors:
+  - name: "vcf-sv-stats contributors"
+license: Apache-2.0
+version: 0.1.0-dev
