@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from tools.build_sbom import _wheel_version
+from tools.verify_test_data import verify as verify_test_data
 from vcf_sv_stats.exceptions import UsageError
 from vcf_sv_stats.fixture_review import load_review, verify_review
 from vcf_sv_stats.serialization import (
@@ -152,6 +153,10 @@ def build(
         raise UsageError("wheel and source archive versions differ")
     root = Path(__file__).parents[1]
     inventory = _inventory(root / "packaging/runtime-licenses.json", root / "requirements.lock.txt")
+    try:
+        verify_test_data(root / "test_data")
+    except ValueError as exc:
+        raise UsageError("fixture corpus failed strict release verification") from exc
     fixture_manifest = root / "test_data/manifest.json"
     fixture_value = cast(dict[str, Any], json.loads(fixture_manifest.read_text(encoding="utf-8")))
     try:

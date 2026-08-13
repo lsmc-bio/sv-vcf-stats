@@ -6,12 +6,15 @@ import tarfile
 import zipfile
 from pathlib import Path
 
+import pytest
 from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation.json import JsonStrictValidator
 from spdx_tools.spdx.parser.jsonlikedict.json_like_dict_parser import JsonLikeDictParser
 from spdx_tools.spdx.validation.document_validator import validate_full_spdx_document
 
+import tools.build_release_evidence as release_evidence
 from tools.build_release_evidence import _inventory, build
+from vcf_sv_stats.exceptions import UsageError
 
 ROOT = Path(__file__).parents[1]
 
@@ -64,8 +67,29 @@ def test_release_evidence_binds_candidate_artifacts(tmp_path: Path) -> None:
     checksums = result["checksums"].read_text()
     assert wheel.name in checksums
     assert result["spdx"].name in checksums
-    assert JsonStrictValidator(SchemaVersion.V1_6).validate_str(
-        result["cyclonedx"].read_text()
-    ) is None
+    assert (
+        JsonStrictValidator(SchemaVersion.V1_6).validate_str(result["cyclonedx"].read_text())
+        is None
+    )
     parsed_spdx = JsonLikeDictParser().parse(spdx)
     assert validate_full_spdx_document(parsed_spdx) == []
+
+
+def test_release_evidence_rejects_fixture_integrity_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    wheel, sdist = _candidate_artifacts(tmp_path)
+
+    def fail_fixture_verification(_root: Path) -> dict[str, int]:
+        raise ValueError("fixture digest mismatch")
+
+    monkeypatch.setattr(release_evidence, "verify_test_data", fail_fixture_verification)
+    with pytest.raises(UsageError, match="fixture corpus failed strict release verification"):
+        build(
+            wheel=wheel,
+            sdist=sdist,
+            output_dir=tmp_path,
+            source_commit="a" * 40,
+            created="2026-08-13T00:00:00Z",
+            invocation_id="local-test",
+        )
