@@ -43,7 +43,7 @@ Date: 2026-08-13
 - Independent validator: bcftools 1.24 with HTSlib 1.24.
 - Git: 2.50.1.
 - GitHub CLI: 2.86.0, authenticated as `iamh2o`.
-- Implementation tests: 55 tests pass on Python 3.11; the 3.11, 3.12, and 3.13 isolated matrices each pass.
+- Implementation tests: 56 tests pass on Python 3.11; the 3.11, 3.12, and 3.13 isolated matrices each pass.
 - Coverage: 79 percent branch-aware line coverage, above the configured 70 percent floor.
 
 ### Source VCF digests
@@ -92,14 +92,14 @@ Date: 2026-08-13
 | REPO-003 | Ownership | `iamh2o` is repository-wide CODEOWNER | SUCCESS | feature_implementation | Gate 1 | orchestrator | `.github/CODEOWNERS` assigns `*` to `@iamh2o` |  | Repository-wide ownership rule is explicit. |
 | REPO-004 | Security | Code security, dependency updates, secret scanning, and push protection enabled | SUCCESS | legitimate_safety_handling | Gate 0 | orchestrator | GitHub security settings |  | Enabled at repository or organization level. |
 | REPO-005 | Security | Private vulnerability reporting enabled or exact platform limitation recorded | SUCCESS | legitimate_safety_handling | Gate 3 | orchestrator | Repository endpoint returns 404 while private; GitHub documents the feature for public repositories | Platform does not expose the feature for this private repository. | Exact limitation recorded; re-evaluate immediately before public visibility. |
-| REPO-006 | CI | Public GitHub-hosted CI and dependency review configured | IN_PROGRESS | feature_implementation | Gate 3 | orchestrator | `.github/workflows/ci.yml` defines three Python jobs, packaging, container audit, HTSlib 1.24 validation, and dependency review | Workflow cannot execute until the branch is pushed. | Awaiting private draft pull-request CI. |
+| REPO-006 | CI | Public GitHub-hosted CI and dependency review configured | SUCCESS | feature_implementation | Gate 3 | orchestrator | Run `31687747018` passed three Python jobs, packaging, full container-layer audit, HTSlib 1.24 validation, and dependency review |  | Private draft pull-request CI is green. |
 | PROD-001 | Neutrality | No organization-specific runtime, identity, path, domain, package, service, or branding dependency | SUCCESS | active_product_contract | Gate 3 | orchestrator | Neutral schemas, adapter URNs, config, local/stdin input gate, public lock files, structural scanner, and zero local findings |  | Hosting organization appears only in repository administration. |
-| BRAND-002 | Neutrality | Prohibited company token absent from files, artifacts, history, and GitHub metadata | IN_PROGRESS | contract_test | Gate 3 | orchestrator | Hashed-token scans pass for checkout, nested artifacts, current reachable Git objects, repository metadata, and the locally tested image; workflow logs do not yet exist | Branch has not yet produced GitHub workflow logs. | Awaiting post-CI metadata and log scan. |
+| BRAND-002 | Neutrality | Prohibited company token absent from files, artifacts, history, and GitHub metadata | SUCCESS | contract_test | Gate 3 | orchestrator | Unexcepted hashed-token scan passed after run `31687747018` across checkout, nested artifacts, every reachable Git object, repository metadata, pull-request text, and all completed workflow logs; the CI image layer scan also passed |  | Zero findings across every required surface. |
 | FIX-001 | Fixtures | All bundled source-derived fixtures are verified HG002-only | SUCCESS | contract_test | Gate 2 | orchestrator | `tools/verify_test_data.py`; 22 digest-bound source identity inspections; 21 derived fixtures; plain and BCF parity artifacts |  | Exactly one VCF/BCF sample named `HG002`; no other subject token. |
 | FIX-002 | Fixtures | Fixture corpus obeys deterministic record and size budgets | SUCCESS | contract_test | Gate 2 | orchestrator | `test_data/manifest.json`: 1,186 records and 180,037 compressed VCF bytes; all fixtures 12 through 100 records |  | Below 2,500 records, 10 MiB, and 128-record closure caps. |
 | FIX-003 | Fixtures | Headers, bodies, identifiers, relationships, indexes, and provenance are sanitized and valid | SUCCESS | contract_test | Gate 2 | orchestrator | External deterministic regeneration is byte-identical; fixture verifier and bcftools/HTSlib 1.24 validate all VCF/BCF files and indexes |  | Retained caller quirks remain explicit diagnostics, not silent repairs. |
 | FIX-004 | Fixtures | Redistribution review recorded for every source-derived fixture | SUCCESS | legitimate_safety_handling | Gate 2 | orchestrator | `docs/fixture-governance.md`, `test_data/NOTICE.md`, and per-entry manifest status |  | Public-release re-review is an explicit later gate. |
-| REL-001 | Publication | Repository remains private; no package, image, tag, or upstream publication performed | IN_PROGRESS | active_product_contract | Gate 4 | orchestrator | Current GitHub visibility is private; no tags or releases; artifacts only in temporary local directories | Final branch and pull-request state not yet available. | Awaiting private draft pull request and final publication audit. |
+| REL-001 | Publication | Repository remains private; no package, image, tag, or upstream publication performed | SUCCESS | active_product_contract | Gate 4 | orchestrator | Private draft pull request `#1`; repository visibility `PRIVATE`; no release, tag, package, image, or upstream publication |  | Pre-1.0 review boundary is preserved. |
 
 ## Neutralized acceptance criteria
 
@@ -145,7 +145,7 @@ Date: 2026-08-13
 | AC-038 | Discrepancies output is exhaustive, deterministic, non-mutating, and published before fail-on exit | SUCCESS | contract_test | Gate 1 | orchestrator | JSON/JSONL/TSV count reconciliation, input digest check, CLI fail-on test |  | Report publication precedes policy exit. |
 | AC-039 | Native MultiQC contract discovers only signed summaries, separates identities, and rejects duplicates | BLOCKED | contract_test | Gate 3 | orchestrator | Producer-side `ingest_summaries` contract and duplicate/conflict/schema tests pass | A native upstream module is an external publication action requiring later explicit approval. | Producer boundary is ready; no upstream branch or pull request was created. |
 | AC-040 | Performance matrix demonstrates bounded memory, relative scaling, determinism, and interruption safety | FAIL | contract_test | Gate 3 | orchestrator | `tools/benchmark_streaming.py`; three deterministic runs each on 100-record and 98-record fixtures | The required million/ten-million-record, relative-scaling, RSS, baseline, signal, and crash matrix was not run. | Harness and smoke baseline are committed; qualify on generated neutral large inputs before v1. |
-| AC-041 | Wheel, source archive, and container build offline, run non-root where applicable, and contain no reference | BLOCKED | contract_test | Gate 3 | orchestrator | Reproducible wheel/sdist builds and scans pass; local image ran read-only and non-root, fixture stats passed, all-layer hashed-token scan passed, and no reference was found | Distribution-channel recipes, release attestations, multi-architecture proof, and final offline install verification are release activities requiring later explicit approval. | No package or image was published; finish release-target verification only after approval. |
+| AC-041 | Wheel, source archive, and container build offline, run non-root where applicable, and contain no reference | BLOCKED | contract_test | Gate 3 | orchestrator | Reproducible wheel/sdist builds and scans pass; run `31687747018` built the image, ran it read-only and non-root, produced fixture stats, scanned all layers, and found no reference | Distribution-channel recipes, release attestations, multi-architecture proof, and final offline install verification are release activities requiring later explicit approval. | No package or image was published; finish release-target verification only after approval. |
 | AC-042 | Documentation explains record/event scope, VCF sample/analysis unit, adapters, references, losses, privacy, and recovery | SUCCESS | feature_implementation | Gate 3 | orchestrator | README, neutral normative specification, operator guide, fixture governance, and MultiQC integration guide |  | Known pre-1.0 gaps are stated without claiming v1 completion. |
 
 ## Status updates
@@ -157,12 +157,14 @@ Date: 2026-08-13
 - 2026-08-13: AC-023 entered `ATTEMPTING_BUGFIX`: inventoried merger support fields and source identities and preserved fixture-relative diagnostics. Disposition is `FAIL` because no digest-bound source-manifest comparator exists.
 - 2026-08-13: AC-026 entered `ATTEMPTING_BUGFIX`: exercised the canonical profile, removed silent copy behavior, and added complete fail-closed assessment tests. Disposition is `FAIL` until lossless remapping and lineage exist.
 - 2026-08-13: AC-040 entered `ATTEMPTING_BUGFIX`: added a path-safe benchmark harness and deterministic repeated fixture runs. Disposition is `FAIL` because the required large-input and interruption matrix remains unexecuted.
-- 2026-08-13: Gate 3 local verification passed: 55 tests, Python 3.11 through 3.13, strict type/lint checks, 79 percent coverage, deterministic package builds, SBOM, fixture verifier, and checkout/artifact/Git/GitHub scans. Workflow-log evidence awaits the private draft pull request.
+- 2026-08-13: Gate 3 local verification passed: 56 tests, Python 3.11 through 3.13, strict type/lint checks, 79 percent coverage, deterministic package builds, SBOM, fixture verifier, and checkout/artifact/Git/GitHub scans.
+- 2026-08-13: The first dependency-review run found a vulnerable test-only dependency. The lock was raised to patched `pytest 9.1.1`; all local checks and the complete seven-job run `31687747018` then passed.
+- 2026-08-13: Gate 4 passed. Post-CI scans found zero matches across product files, artifacts, Git history, GitHub metadata, pull-request text, and completed workflow logs. The private draft pull request is open and no publication action occurred.
 
 ## Final report
 
-All rows terminal: no. Three repository rows await Gate 4 CI and publication-state evidence.
+All rows terminal: yes.
 
 Objective complete: no.
 
-Current status counts: 45 `SUCCESS`, 4 `FAIL`, 1 `NO_LONGER_NEEDED`, 2 `BLOCKED`, and 3 `IN_PROGRESS`.
+Current status counts: 48 `SUCCESS`, 4 `FAIL`, 1 `NO_LONGER_NEEDED`, and 2 `BLOCKED`.
