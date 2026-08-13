@@ -5,6 +5,7 @@ import json
 import tarfile
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 from cyclonedx.schema import SchemaVersion
@@ -19,7 +20,13 @@ from vcf_sv_stats.exceptions import UsageError
 ROOT = Path(__file__).parents[1]
 
 
-def _candidate_artifacts(directory: Path) -> tuple[Path, Path]:
+def _candidate_artifacts(
+    directory: Path,
+    *,
+    fixture_overrides: dict[str, bytes] | None = None,
+    omitted_fixture: str | None = None,
+    extra_fixture: tuple[str, bytes] | None = None,
+) -> tuple[Path, Path]:
     wheel = directory / "vcf_sv_stats-0.2.0-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
         archive.writestr(
@@ -36,6 +43,21 @@ def _candidate_artifacts(directory: Path) -> tuple[Path, Path]:
         nested_payload = pkg_info.replace(b"Version: 0.2.0", b"Version: 9.9.9")
         nested.size = len(nested_payload)
         archive.addfile(nested, io.BytesIO(nested_payload))
+        for fixture in sorted((ROOT / "test_data").rglob("*")):
+            if not fixture.is_file():
+                continue
+            relative = fixture.relative_to(ROOT / "test_data").as_posix()
+            if relative == omitted_fixture:
+                continue
+            payload = (fixture_overrides or {}).get(relative, fixture.read_bytes())
+            member = tarfile.TarInfo(f"vcf_sv_stats-0.2.0/test_data/{relative}")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        if extra_fixture is not None:
+            relative, payload = extra_fixture
+            member = tarfile.TarInfo(f"vcf_sv_stats-0.2.0/test_data/{relative}")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
     return wheel, sdist
 
 
@@ -85,6 +107,40 @@ def test_release_evidence_rejects_fixture_integrity_failure(
 
     monkeypatch.setattr(release_evidence, "verify_test_data", fail_fixture_verification)
     with pytest.raises(UsageError, match="fixture corpus failed strict release verification"):
+        build(
+            wheel=wheel,
+            sdist=sdist,
+            output_dir=tmp_path,
+            source_commit="a" * 40,
+            created="2026-08-13T00:00:00Z",
+            invocation_id="local-test",
+        )
+
+
+@pytest.mark.parametrize(
+    ("candidate_options", "expected_message"),
+    [
+        (
+            {"fixture_overrides": {"NOTICE.md": b"changed fixture notice\n"}},
+            "source archive fixture corpus does not exactly match reviewed checkout",
+        ),
+        (
+            {"omitted_fixture": "NOTICE.md"},
+            "source archive fixture corpus does not exactly match reviewed checkout",
+        ),
+        (
+            {"extra_fixture": ("unexpected.txt", b"unexpected fixture member\n")},
+            "source archive fixture corpus does not exactly match reviewed checkout",
+        ),
+    ],
+)
+def test_release_evidence_rejects_nonidentical_sdist_fixture_tree(
+    tmp_path: Path,
+    candidate_options: dict[str, Any],
+    expected_message: str,
+) -> None:
+    wheel, sdist = _candidate_artifacts(tmp_path, **candidate_options)
+    with pytest.raises(UsageError, match=expected_message):
         build(
             wheel=wheel,
             sdist=sdist,
