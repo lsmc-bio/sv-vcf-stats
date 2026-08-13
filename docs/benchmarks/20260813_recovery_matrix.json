@@ -1,0 +1,60 @@
+{
+  "environment": {
+    "machine": "arm64",
+    "operating_system": "Darwin",
+    "operating_system_release": "25.5.0",
+    "python_version": "3.11.15",
+    "source_commit": "d8222f4cd10241de42ec006716234ad6781e4851"
+  },
+  "input": {
+    "bytes": 10898608,
+    "name": "one-million.vcf.gz",
+    "sha256": "28ccfb848780b66ae7620967b2c407f0acf0299a053db3968076f191ce08e15c"
+  },
+  "policy": {
+    "paths": "basename_only",
+    "publication": "atomic_final_path",
+    "resource_limit": "output_file_size_512_bytes"
+  },
+  "receipt_sha256": "26a88b2be7a727d95f20209a19b40fecaeb806c8e60c5227b6bb7c9772f28c68",
+  "scenarios": [
+    {
+      "elapsed_ns": 302364709,
+      "output_absent": true,
+      "passed": true,
+      "publication_directory_entries": [],
+      "returncode": -2,
+      "scenario": "sigint",
+      "transient_output_entries": []
+    },
+    {
+      "elapsed_ns": 254569167,
+      "output_absent": true,
+      "passed": true,
+      "publication_directory_entries": [],
+      "returncode": -15,
+      "scenario": "sigterm",
+      "transient_output_entries": []
+    },
+    {
+      "elapsed_ns": 640699458,
+      "output_absent": true,
+      "passed": true,
+      "publication_directory_entries": [],
+      "returncode": 1,
+      "scenario": "file_size_limit",
+      "transient_output_entries": []
+    },
+    {
+      "elapsed_ns": 256639500,
+      "output_absent": true,
+      "passed": true,
+      "publication_directory_entries": [],
+      "returncode": -9,
+      "scenario": "sigkill",
+      "transient_output_entries": []
+    }
+  ],
+  "schema_name": "vcf-sv-stats.recovery-qualification",
+  "schema_version": "1.0.0"
+}

@@ -65,6 +65,14 @@ attestations. A separate Apptainer 1.5.3 smoke converts the exact candidate,
 confirms non-root execution, runs the verifier in a contained environment, and
 records the SIF digest.
 
+The full OCI archive and every generated evidence file are scanned for
+`BRAND-002`. Neutrality scanning is deliberately scoped to product-owned Python
+packages, console entry points, image configuration, aggregate evidence, and
+repository content. Base operating-system binaries and third-party SBOM file
+inventories are governed by their pinned digests and license inventories;
+applying short organization-token hashes to arbitrary vendor binary bytes would
+produce non-semantic collisions rather than a branding result.
+
 ## Candidate evidence
 
 `tools/build_release_evidence.py` binds the exact wheel, normalized source

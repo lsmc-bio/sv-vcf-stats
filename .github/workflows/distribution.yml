@@ -184,6 +184,7 @@ jobs:
       - name: Run each architecture without network or writable root
         run: |
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          mkdir -p /tmp/product-owned
           for architecture in amd64 arm64; do
             docker buildx build --platform "linux/$architecture" --load \
               --tag "vcf-sv-stats:$architecture" \
@@ -197,6 +198,19 @@ jobs:
               --entrypoint vcf-sv-stats-verify-install \
               "vcf-sv-stats:$architecture" \
               --output "/tmp/$architecture.install.json"
+            mkdir -p "/tmp/product-owned/$architecture/bin"
+            container_id=$(docker create --platform "linux/$architecture" \
+              "vcf-sv-stats:$architecture")
+            docker cp \
+              "$container_id:/usr/local/lib/python3.11/dist-packages/vcf_sv_stats" \
+              "/tmp/product-owned/$architecture/vcf_sv_stats"
+            docker cp "$container_id:/usr/local/bin/vcf-sv-stats" \
+              "/tmp/product-owned/$architecture/bin/vcf-sv-stats"
+            docker cp "$container_id:/usr/local/bin/vcf-sv-stats-verify-install" \
+              "/tmp/product-owned/$architecture/bin/vcf-sv-stats-verify-install"
+            docker inspect "vcf-sv-stats:$architecture" \
+              > "/tmp/product-owned/$architecture/image-config.json"
+            docker rm "$container_id"
           done
       - name: Build aggregate SBOM, checksums, and signed candidate provenance
         env:
@@ -205,7 +219,7 @@ jobs:
           uv build
           uv run python tools/normalize_sdist.py \
             --sdist dist/*.tar.gz --epoch "$SOURCE_DATE_EPOCH"
-          uv run python tools/build_release_evidence.py \
+          uv run python -m tools.build_release_evidence \
             --wheel dist/*.whl --sdist dist/*.tar.gz \
             --oci-archive /tmp/vcf-sv-stats.oci.tar \
             --oci-audit release/oci-audit.json \
@@ -223,11 +237,21 @@ jobs:
           cp /tmp/candidate.pub release/candidate.cosign.pub
       - name: Scan the OCI archive and every evidence artifact
         run: |
+          mkdir /tmp/oci-archive-scan /tmp/release-neutrality-scan
+          cp /tmp/vcf-sv-stats.oci.tar /tmp/oci-archive-scan/candidate.oci.tar
+          cp release/candidate.* release/CHECKSUMS.sha256 release/oci-audit.json \
+            /tmp/release-neutrality-scan/
           uv run python tools/scan_tokens.py \
-            --root /tmp/vcf-sv-stats.oci.tar \
+            --root /tmp/oci-archive-scan \
             --policy policy/forbidden-token-hashes.json
           uv run python tools/scan_tokens.py \
-            --root release --policy policy/neutrality-token-hashes.json --structural
+            --root release --policy policy/forbidden-token-hashes.json
+          uv run python tools/scan_tokens.py \
+            --root /tmp/product-owned \
+            --policy policy/neutrality-token-hashes.json --structural
+          uv run python tools/scan_tokens.py \
+            --root /tmp/release-neutrality-scan \
+            --policy policy/neutrality-token-hashes.json --structural
       - uses: actions/upload-artifact@v4
         with:
           name: release-candidate-evidence

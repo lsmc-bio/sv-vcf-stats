@@ -34,7 +34,11 @@ def _file_sha1(path: Path) -> str:
 
 def _sdist_version(sdist: Path) -> str:
     with tarfile.open(sdist, "r:gz") as archive:
-        members = [member for member in archive.getmembers() if member.name.endswith("/PKG-INFO")]
+        members = [
+            member
+            for member in archive.getmembers()
+            if member.name.count("/") == 1 and member.name.endswith("/PKG-INFO")
+        ]
         if len(members) != 1:
             raise UsageError("source archive must contain exactly one PKG-INFO")
         handle = archive.extractfile(members[0])

@@ -29,6 +29,10 @@ def _candidate_artifacts(directory: Path) -> tuple[Path, Path]:
         member = tarfile.TarInfo("vcf_sv_stats-0.2.0/PKG-INFO")
         member.size = len(pkg_info)
         archive.addfile(member, io.BytesIO(pkg_info))
+        nested = tarfile.TarInfo("vcf_sv_stats-0.2.0/src/vcf_sv_stats.egg-info/PKG-INFO")
+        nested_payload = pkg_info.replace(b"Version: 0.2.0", b"Version: 9.9.9")
+        nested.size = len(nested_payload)
+        archive.addfile(nested, io.BytesIO(nested_payload))
     return wheel, sdist
 
 
