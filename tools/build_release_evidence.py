@@ -10,8 +10,8 @@ import re
 import tarfile
 import uuid
 from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any, cast
+from pathlib import Path, PurePosixPath
+from typing import IO, Any, cast
 
 from tools.build_sbom import _wheel_version
 from tools.verify_test_data import verify as verify_test_data
@@ -34,25 +34,119 @@ def _file_sha1(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _stream_sha256(handle: IO[bytes]) -> str:
+    digest = hashlib.sha256()
+    while chunk := handle.read(1024 * 1024):
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sdist_metadata_member(archive: tarfile.TarFile) -> tuple[str, tarfile.TarInfo]:
+    members = archive.getmembers()
+    candidates = []
+    for member in members:
+        parts = PurePosixPath(member.name).parts
+        if len(parts) == 2 and parts[1] == "PKG-INFO":
+            candidates.append((parts[0], member))
+    if len(candidates) != 1:
+        raise UsageError("source archive must contain exactly one PKG-INFO")
+    package_root, member = candidates[0]
+    if (
+        re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", package_root) is None
+        or member.name != f"{package_root}/PKG-INFO"
+        or not member.isfile()
+    ):
+        raise UsageError("source archive package root is unsafe")
+    observed: set[str] = set()
+    for archive_member in members:
+        archive_path = PurePosixPath(archive_member.name)
+        canonical_name = archive_path.as_posix()
+        supplied_name = (
+            archive_member.name.rstrip("/") if archive_member.isdir() else archive_member.name
+        )
+        if (
+            not archive_path.parts
+            or archive_path.parts[0] != package_root
+            or ".." in archive_path.parts
+            or supplied_name != canonical_name
+        ):
+            raise UsageError("source archive contains an unsafe member path")
+        if canonical_name in observed:
+            raise UsageError("source archive contains a duplicate member path")
+        observed.add(canonical_name)
+        if not archive_member.isfile() and not archive_member.isdir():
+            raise UsageError("source archive contains a non-regular member")
+    return package_root, member
+
+
 def _sdist_version(sdist: Path) -> str:
     with tarfile.open(sdist, "r:gz") as archive:
-        members = [
-            member
-            for member in archive.getmembers()
-            if member.name.count("/") == 1 and member.name.endswith("/PKG-INFO")
-        ]
-        if len(members) != 1:
-            raise UsageError("source archive must contain exactly one PKG-INFO")
-        handle = archive.extractfile(members[0])
+        _, metadata_member = _sdist_metadata_member(archive)
+        handle = archive.extractfile(metadata_member)
         if handle is None:
             raise UsageError("source archive PKG-INFO is unreadable")
-        text = handle.read().decode("utf-8")
+        with handle:
+            text = handle.read().decode("utf-8")
     version_lines = [
         line.partition(":")[2].strip() for line in text.splitlines() if line.startswith("Version:")
     ]
     if len(version_lines) != 1:
         raise UsageError("source archive must declare exactly one version")
     return version_lines[0]
+
+
+def _verify_sdist_fixture_tree(sdist: Path, fixture_root: Path) -> None:
+    expected: dict[str, tuple[int, str]] = {}
+    for path in sorted(fixture_root.rglob("*")):
+        if path.is_symlink():
+            raise UsageError("reviewed fixture corpus contains a symbolic link")
+        if path.is_file():
+            expected[path.relative_to(fixture_root).as_posix()] = (
+                path.stat().st_size,
+                file_sha256(path),
+            )
+    if not expected:
+        raise UsageError("reviewed fixture corpus is empty")
+
+    observed: set[str] = set()
+    with tarfile.open(sdist, "r:gz") as archive:
+        package_root, _ = _sdist_metadata_member(archive)
+        prefix = f"{package_root}/test_data/"
+        for member in archive.getmembers():
+            if not member.name.startswith(prefix):
+                continue
+            relative_name = member.name.removeprefix(prefix)
+            relative = PurePosixPath(relative_name)
+            if (
+                not relative_name
+                or relative.is_absolute()
+                or ".." in relative.parts
+                or relative.as_posix() != relative_name
+            ):
+                raise UsageError("source archive fixture path is unsafe")
+            if member.isdir():
+                continue
+            if not member.isfile():
+                raise UsageError("source archive fixture member is not a regular file")
+            if relative_name in observed:
+                raise UsageError("source archive fixture path is duplicated")
+            observed.add(relative_name)
+            expected_entry = expected.get(relative_name)
+            if expected_entry is None or member.size != expected_entry[0]:
+                raise UsageError(
+                    "source archive fixture corpus does not exactly match reviewed checkout"
+                )
+            handle = archive.extractfile(member)
+            if handle is None:
+                raise UsageError("source archive fixture member is unreadable")
+            with handle:
+                observed_digest = _stream_sha256(handle)
+            if observed_digest != expected_entry[1]:
+                raise UsageError(
+                    "source archive fixture corpus does not exactly match reviewed checkout"
+                )
+    if observed != set(expected):
+        raise UsageError("source archive fixture corpus does not exactly match reviewed checkout")
 
 
 def _locked_packages(lock: Path) -> list[dict[str, str]]:
@@ -174,6 +268,7 @@ def build(
     )
     if fixture_subjects != ["HG002"]:
         raise UsageError("fixture license evidence is not terminal and single-subject")
+    _verify_sdist_fixture_tree(sdist, root / "test_data")
 
     artifacts = [
         _artifact(wheel, media_type="application/vnd.python.wheel"),

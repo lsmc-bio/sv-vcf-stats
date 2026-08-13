@@ -81,7 +81,7 @@ archive, optional OCI layout and audit, full Git commit, locked runtime
 dependencies, native tooling, and reviewed HG002 fixture corpus. It emits:
 
 - CycloneDX 1.6 and SPDX 2.3 SBOMs;
-- SHA-256 and SHA-512 checksums;
+- SHA-256 checksums;
 - an in-toto statement with SLSA v1 provenance;
 - an exact runtime-license inventory;
 - OCI platform attestations and audit receipt when a container is included.
