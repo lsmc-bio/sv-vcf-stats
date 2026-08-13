@@ -41,16 +41,28 @@ def _stream_sha256(handle: IO[bytes]) -> str:
     return digest.hexdigest()
 
 
+def _sdist_metadata_member(archive: tarfile.TarFile) -> tuple[str, tarfile.TarInfo]:
+    candidates = []
+    for member in archive.getmembers():
+        parts = PurePosixPath(member.name).parts
+        if len(parts) == 2 and parts[1] == "PKG-INFO":
+            candidates.append((parts[0], member))
+    if len(candidates) != 1:
+        raise UsageError("source archive must contain exactly one PKG-INFO")
+    package_root, member = candidates[0]
+    if (
+        re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", package_root) is None
+        or member.name != f"{package_root}/PKG-INFO"
+        or not member.isfile()
+    ):
+        raise UsageError("source archive package root is unsafe")
+    return package_root, member
+
+
 def _sdist_version(sdist: Path) -> str:
     with tarfile.open(sdist, "r:gz") as archive:
-        members = [
-            member
-            for member in archive.getmembers()
-            if member.name.count("/") == 1 and member.name.endswith("/PKG-INFO")
-        ]
-        if len(members) != 1:
-            raise UsageError("source archive must contain exactly one PKG-INFO")
-        handle = archive.extractfile(members[0])
+        _, metadata_member = _sdist_metadata_member(archive)
+        handle = archive.extractfile(metadata_member)
         if handle is None:
             raise UsageError("source archive PKG-INFO is unreadable")
         text = handle.read().decode("utf-8")
@@ -77,14 +89,7 @@ def _verify_sdist_fixture_tree(sdist: Path, fixture_root: Path) -> None:
 
     observed: set[str] = set()
     with tarfile.open(sdist, "r:gz") as archive:
-        package_roots = {
-            PurePosixPath(member.name).parts[0]
-            for member in archive.getmembers()
-            if member.name.count("/") == 1 and member.name.endswith("/PKG-INFO")
-        }
-        if len(package_roots) != 1:
-            raise UsageError("source archive must contain exactly one package root")
-        package_root = package_roots.pop()
+        package_root, _ = _sdist_metadata_member(archive)
         prefix = f"{package_root}/test_data/"
         for member in archive.getmembers():
             if not member.name.startswith(prefix):
