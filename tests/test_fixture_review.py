@@ -3,12 +3,14 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from tools.build_test_data import SourceSpec, build
+from tools.verify_test_data import verify
 from vcf_sv_stats.fixture_review import (
     PENDING_REDISTRIBUTION_STATUS,
     apply_review,
@@ -16,6 +18,7 @@ from vcf_sv_stats.fixture_review import (
     manifest_review_digest,
     verify_review,
 )
+from vcf_sv_stats.serialization import json_bytes
 
 ROOT = Path(__file__).parents[1]
 
@@ -56,3 +59,20 @@ def test_review_can_only_promote_an_exact_pending_manifest() -> None:
 def test_source_specs_do_not_carry_a_default_review_disposition() -> None:
     assert "redistribution_status" not in SourceSpec.__dataclass_fields__
     assert inspect.signature(build).parameters["redistribution_review"].default is None
+
+
+def test_pending_fixture_integrity_mode_is_explicit_and_release_gate_stays_strict(
+    tmp_path: Path,
+) -> None:
+    staged = tmp_path / "test_data"
+    shutil.copytree(ROOT / "test_data", staged)
+    (staged / "redistribution-review.json").unlink()
+    manifest = json.loads((staged / "manifest.json").read_text(encoding="utf-8"))
+    for collection in ("fixtures", "derived_parity_artifacts"):
+        for entry in manifest[collection]:
+            entry["redistribution_status"] = PENDING_REDISTRIBUTION_STATUS
+    (staged / "manifest.json").write_bytes(json_bytes(manifest))
+
+    with pytest.raises(ValueError, match="review policy is missing"):
+        verify(staged)
+    assert verify(staged, require_review=False) == {"fixtures": 21, "records": 1186}

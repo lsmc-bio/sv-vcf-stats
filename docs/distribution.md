@@ -103,7 +103,10 @@ false unless public signing metadata is separately approved.
 
 The OIDC permission exists only on that job-level-gated signing job. Pull
 requests and ordinary qualification jobs receive no identity-token permission,
-so code under review cannot bypass the public-write gate.
+so code under review cannot bypass the public-write gate. The signing job also
+declares every distribution qualification as a prerequisite and requires
+`success()`, preventing an irreversible transparency entry for a partially
+qualified candidate.
 
 The Sigstore bundle necessarily contains the administrative repository and
 workflow identity. That identity is the sole hosting exception to product

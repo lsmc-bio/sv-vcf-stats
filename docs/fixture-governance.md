@@ -95,10 +95,10 @@ Regeneration procedure:
 stage_root=$(mktemp -d)
 uv run python tools/build_test_data.py \
   --source-dir /explicit/source/directory \
-  --output-dir "$stage_root/test_data" \
-  --redistribution-review test_data/redistribution-review.json
+  --output-dir "$stage_root/test_data"
 uv run python tools/verify_test_data.py \
-  --test-data-dir "$stage_root/test_data"
+  --test-data-dir "$stage_root/test_data" \
+  --allow-pending-redistribution-review
 uv run python tools/scan_tokens.py \
   --root "$stage_root/test_data" \
   --policy policy/forbidden-token-hashes.json
@@ -114,3 +114,9 @@ promotes the manifest only when every review-bound field is byte-for-byte
 equivalent after canonicalization; a changed source or generated artifact fails
 instead of inheriting the old date. Raw and intermediate VCFs must never be
 staged in Git.
+
+After approving an exact staged corpus, record its canonical manifest-review
+digest in the policy, rebuild into a fresh temporary directory with
+`--redistribution-review /explicit/review/policy.json`, and rerun the verifier
+without the pending-review option. Release evidence always uses that strict
+default; integrity-only verification can never authorize redistribution.

@@ -38,7 +38,7 @@ def test_distribution_workflow_scans_loaded_platform_images() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
 
     assert 'syft "vcf-sv-stats:$architecture"' in workflow
-    assert 'release/linux-$architecture.container.cyclonedx.json' in workflow
+    assert "release/linux-$architecture.container.cyclonedx.json" in workflow
     assert "syft scan oci-archive:" not in workflow
     assert "release/CHECKSUMS.sha256" not in workflow
     assert "release/candidate.provenance.intoto.json" in workflow
@@ -57,9 +57,12 @@ def test_distribution_workflow_uses_exact_keyless_identity_on_default_branch() -
     assert "github.event_name == 'workflow_dispatch'" in sigstore
     assert "inputs.publish_sigstore_entry" in sigstore
     assert "github.ref_name == github.event.repository.default_branch" in sigstore
+    assert "success()" in sigstore
+    for prerequisite in ("aggregate-install-matrix", "bioconda", "oci", "apptainer"):
+        assert f"- {prerequisite}" in sigstore
     assert 'certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"' in sigstore
     assert 'test "$certificate_identity" = "$expected_identity"' in sigstore
-    assert "--certificate-identity \"$certificate_identity\"" in sigstore
+    assert '--certificate-identity "$certificate_identity"' in sigstore
     assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in sigstore
     assert "cosign generate-key-pair" not in workflow
     assert "COSIGN_PASSWORD" not in workflow

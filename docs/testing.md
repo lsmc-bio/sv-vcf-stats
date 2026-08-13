@@ -46,6 +46,11 @@ percentage.
 uv run python tools/verify_test_data.py --test-data-dir test_data
 ```
 
+This default is the strict release gate and requires an exact-digest review
+policy. Reviewers of a newly regenerated corpus may run the same command with
+`--allow-pending-redistribution-review`; that explicit mode validates content,
+identity, indexes, and budgets but cannot satisfy release evidence.
+
 The verifier independently checks:
 
 - the exact expected file set;

@@ -260,10 +260,15 @@ jobs:
   sigstore:
     name: Opt-in default-branch Sigstore provenance
     if: >-
+      success() &&
       github.event_name == 'workflow_dispatch' &&
       inputs.publish_sigstore_entry &&
       github.ref_name == github.event.repository.default_branch
-    needs: oci
+    needs:
+      - aggregate-install-matrix
+      - bioconda
+      - oci
+      - apptainer
     runs-on: ubuntu-24.04
     permissions:
       contents: read

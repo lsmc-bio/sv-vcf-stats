@@ -11,7 +11,7 @@ from typing import Any, cast
 
 import pysam
 
-from vcf_sv_stats.fixture_review import load_review, verify_review
+from vcf_sv_stats.fixture_review import PENDING_REDISTRIBUTION_STATUS, load_review, verify_review
 from vcf_sv_stats.serialization import file_sha256
 
 SUBJECT = "HG002"
@@ -40,14 +40,19 @@ def _inspect_variant(path: Path) -> int:
     return observed
 
 
-def verify(root: Path) -> dict[str, int]:
+def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
     manifest = cast(
         dict[str, Any], json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     )
     if manifest.get("subject") != SUBJECT:
         raise ValueError("Fixture manifest subject is not HG002")
-    review = load_review(root / "redistribution-review.json")
-    redistribution_status = verify_review(manifest, review)
+    review_path = root / "redistribution-review.json"
+    if review_path.is_file():
+        redistribution_status = verify_review(manifest, load_review(review_path))
+    elif require_review:
+        raise ValueError("Fixture redistribution review policy is missing")
+    else:
+        redistribution_status = PENDING_REDISTRIBUTION_STATUS
     source_evidence = manifest.get("source_identity_evidence")
     if not isinstance(source_evidence, list) or len(source_evidence) != 22:
         raise ValueError("Fixture manifest must contain all 22 source identity inspections")
@@ -144,8 +149,12 @@ def verify(root: Path) -> dict[str, int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--test-data-dir", type=Path, required=True)
+    parser.add_argument("--allow-pending-redistribution-review", action="store_true")
     args = parser.parse_args()
-    result = verify(args.test_data_dir.resolve(strict=True))
+    result = verify(
+        args.test_data_dir.resolve(strict=True),
+        require_review=not args.allow_pending_redistribution_review,
+    )
     print(json.dumps(result, sort_keys=True))
 
 
