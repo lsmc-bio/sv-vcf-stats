@@ -126,3 +126,18 @@ The full cross-platform contract runs in
 `.github/workflows/distribution.yml`; a single workstation cannot substitute
 for its OS and architecture receipts. Passing qualification authorizes no
 upload, release, tag, merge, or visibility change.
+
+## Private GitHub release sequence
+
+The untagged default-branch run qualifies the exact source commit and its
+development-version artifacts. It does not qualify the final release version.
+After that run and the final source scans pass, create the immutable annotated
+`1.0.0` tag on the qualified commit and dispatch the full distribution workflow
+on that tag. Every wheel, source archive, Conda package, OCI image, and
+Apptainer build fails unless its derived version is exactly the tag name.
+
+Create the private GitHub release only after the tag-ref run succeeds and its
+downloaded artifacts, evidence, and workflow logs pass the final scans. Leave
+Sigstore publication disabled unless the public transparency-log write has
+separate approval. The tag and GitHub release do not authorize a visibility
+change or registry upload.

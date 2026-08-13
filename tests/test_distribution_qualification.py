@@ -67,3 +67,10 @@ def test_distribution_workflow_uses_exact_keyless_identity_on_default_branch() -
     assert "cosign generate-key-pair" not in workflow
     assert "COSIGN_PASSWORD" not in workflow
     assert "candidate.cosign.pub" not in workflow
+
+
+def test_tagged_distribution_qualification_requires_exact_tag_version() -> None:
+    workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
+
+    assert workflow.count('if test "$GITHUB_REF_TYPE" = tag; then') == 4
+    assert workflow.count('test "$candidate_version" = "$GITHUB_REF_NAME"') == 4

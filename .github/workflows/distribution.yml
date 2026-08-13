@@ -41,7 +41,12 @@ jobs:
       - name: Build the exact wheel and source archive
         run: |
           uv sync --locked --all-extras --python "${{ matrix.python-version }}"
-          SOURCE_DATE_EPOCH=315532800 uv build
+          candidate_version=$(uv run python -m setuptools_scm)
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
+          SETUPTOOLS_SCM_PRETEND_VERSION="$candidate_version" \
+            SOURCE_DATE_EPOCH=315532800 uv build
           uv run python tools/normalize_sdist.py \
             --sdist dist/*.tar.gz --epoch 315532800
       - name: Prepare a complete local wheelhouse
@@ -136,6 +141,9 @@ jobs:
         shell: bash -el {0}
         run: |
           candidate_version=$(python -m setuptools_scm)
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           export SETUPTOOLS_SCM_PRETEND_VERSION="$candidate_version"
           conda build packaging/conda/rfc8785 \
             --output-folder /tmp/local-channel -c conda-forge --no-anaconda-upload
@@ -171,6 +179,9 @@ jobs:
         run: |
           uv sync --locked --all-extras --python 3.11
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           mkdir release release/container-attestations
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
@@ -334,6 +345,9 @@ jobs:
         run: |
           uv sync --locked --all-extras --python 3.11
           candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          if test "$GITHUB_REF_TYPE" = tag; then
+            test "$candidate_version" = "$GITHUB_REF_NAME"
+          fi
           docker build --tag vcf-sv-stats:apptainer \
             --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
             --build-arg "SOURCE_COMMIT=$GITHUB_SHA" .

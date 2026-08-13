@@ -155,6 +155,12 @@ At handoff, report:
 - whether the objective is actually complete;
 - exact commits, tags, releases, CI runs, and artifacts supporting the answer.
 
+For any release audit, verify that the final distribution workflow ran on the
+annotated tag itself, every derived artifact reports exactly the tag version,
+and the GitHub release assets came from that exact tag-ref run. A successful
+untagged development-version build is necessary source evidence but is not
+sufficient release-version evidence.
+
 Do not declare 100 percent because tests pass. Declare it only when the design,
 specification, implementation, fixtures, documentation, distribution evidence,
 and maintained MultiQC consumer agree under independent negative testing.

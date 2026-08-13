@@ -8,7 +8,7 @@ Date: 2026-08-13
 - Prior implementation ledger: `docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md`
 - Product boundary: neutral `vcf-sv-stats` code and documentation; organization names remain administrative hosting details only
 - MultiQC boundary: integrate and qualify against the organization-owned MultiQC fork; do not merge into or otherwise modify upstream `MultiQC/MultiQC` or `MultiQC/test-data`
-- Publication boundary: keep the repository private; after exact-main qualification, create annotated tag `1.0.0` and a private GitHub release. Do not change visibility or upload Python, Conda, or container-registry artifacts
+- Publication boundary: keep the repository private; after exact-main qualification, create annotated tag `1.0.0`, qualify the exact tag-derived version, and only then create a private GitHub release. Do not change visibility or upload Python, Conda, or container-registry artifacts
 
 ## Gate 0: inventory freeze
 
@@ -60,7 +60,8 @@ Date: 2026-08-13
 | SCAN-001 | Neutrality | Run final checkout, artifact, Git, GitHub metadata, and completed-workflow scans with zero findings | OPEN | contract_test | Gate 5 | orchestrator | Pending |  |  |
 | FINAL-001 | Closure | Terminalize every row and preserve the no-public-visibility and no-registry-publication boundary | OPEN | plan_amendment | Gate 5 | orchestrator | Pending |  |  |
 | HANDOFF-001 | Independent review | Commit a self-contained new-thread guide for skeptical design, specification, implementation, evidence, and gap review | IN_PROGRESS | plan_amendment | Gate 6 | orchestrator | `docs/plans/20260813T193359Z_independent_design_completion_review_handoff.md` |  | Awaiting merge. |
-| REL-001 | Tool version | Tag the exact qualified private default branch with annotated breaking version `1.0.0` | OPEN | release | Gate 6 | orchestrator | Pending |  |  |
+| REL-001 | Tool version | Tag the source-qualified private default branch with annotated breaking version `1.0.0` | OPEN | release | Gate 6 | orchestrator | Pending |  | The immutable tag is the input to final release-version qualification, not its substitute. |
+| QUAL-002 | Release version | Run the full distribution matrix and final artifact scans on the exact `1.0.0` tag; require every derived package and image version to equal the tag | OPEN | contract_test | Gate 6 | orchestrator | Pending |  | The GitHub release is blocked until this exact-tag gate succeeds. |
 | REL-002 | Tool release | Create a formal GitHub release for `1.0.0` while keeping the repository private | OPEN | release | Gate 6 | orchestrator | Pending |  |  |
 | REL-003 | MultiQC fork release | Tag the merged fork module with the next available maintained-fork version and create its GitHub release | SUCCESS | release | Gate 6 | orchestrator | An annotated release tag peels to merge `f0377460424de2e4e75c97f1f27ef6261fc97897`; the corresponding formal GitHub release was published on 2026-08-13 |  | The exact administrative version is recorded in the fork release, not in this neutral product repository. |
 
@@ -73,8 +74,8 @@ Date: 2026-08-13
 | Gate 2 | Fixture-first fork integration and module PR merged with complete fork-local tests; public upstream drafts closed unmerged. |
 | Gate 3 | Every bundled fixture has a fresh evidence-backed redistribution disposition. |
 | Gate 4 | Durable keyless identity, release-candidate documentation, and visibility-transition security gate are implemented and tested. |
-| Gate 5 | Exact merged default-branch qualification and all final scans pass before the private tag and GitHub release; no visibility change or registry publication occurs. |
-| Gate 6 | Independent-review handoff is merged; private tool and maintained-fork tags and GitHub releases point to their qualified merge commits. Repository visibility and registries remain unchanged. |
+| Gate 5 | Exact merged default-branch source qualification and source-state scans pass before the private tag; no visibility change or registry publication occurs. |
+| Gate 6 | The independent-review handoff is merged; the annotated tool tag receives full version-matching distribution qualification before its private GitHub release; maintained-fork tag and release evidence is terminal. Repository visibility and registries remain unchanged. |
 
 ## Final report
 
@@ -82,7 +83,7 @@ All rows terminal: no.
 
 Objective complete: no.
 
-No repository visibility change, registry upload, or upstream MultiQC merge is authorized by this ledger. Annotated tags and the requested GitHub releases are authorized only after their exact merge commits qualify.
+No repository visibility change, registry upload, or upstream MultiQC merge is authorized by this ledger. The tool tag is authorized after its exact merge commit passes source qualification; its GitHub release is authorized only after the tagged `1.0.0` artifacts independently pass the full distribution and scan gates.
 
 ## Status updates
 
@@ -91,3 +92,4 @@ No repository visibility change, registry upload, or upstream MultiQC merge is a
 - 2026-08-13: MQC-002 through MQC-006 succeeded. The maintained-fork module merged as `f0377460424de2e4e75c97f1f27ef6261fc97897` after exact-head CodeQL and local Python 3.9/3.14 qualification; both superseded public-upstream drafts were closed without merge.
 - 2026-08-13: FIX-001 through VULN-001 reached evidence-backed success. Twenty-three fixture artifacts have a dated disposition, the durable signer is exact-identity keyless OIDC with an opt-in public-log gate, current status docs are reconciled, and the visibility-transition security read-back is mandatory.
 - 2026-08-13: REL-003 succeeded. The next annotated maintained-fork tag and formal GitHub release point to the qualified module merge; its administrative version string remains outside this neutral product repository.
+- 2026-08-13: Automated release review identified that untagged `setuptools-scm` artifacts carry a development version. QUAL-002 now makes full exact-tag `1.0.0` qualification a hard prerequisite for the private GitHub release.
