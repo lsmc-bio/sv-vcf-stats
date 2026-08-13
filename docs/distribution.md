@@ -143,19 +143,16 @@ uv run pytest -q tests/test_verify_install.py \
 uv run vcf-sv-stats-verify-install --output /tmp/install-verification.json
 ```
 
-The full cross-platform contract runs in
-`.github/workflows/distribution.yml`; a single workstation cannot substitute
-for its OS and architecture receipts. Passing qualification authorizes no
-upload, release, tag, merge, or visibility change.
+The prior cross-platform distribution contract is retained in Git history but
+is not part of release `1.0.1`. Do not resume its matrix. The current
+`.github/workflows/distribution.yml` manually builds only the universal wheel
+that will be attached to the GitHub release.
 
 ## Public GitHub wheel release sequence
 
-The untagged default-branch run qualifies the exact source commit and its
-development-version artifacts. It does not qualify the final release version.
-After that run and the final source scans pass, create the immutable annotated
-`1.0.1` tag on the qualified commit and dispatch the full distribution workflow
-on that tag. Every wheel, source archive, Conda package, OCI image, and
-Apptainer build fails unless its derived version is exactly the tag name.
+Create the immutable annotated `1.0.1` tag on the merged release commit and
+dispatch the one-wheel workflow on that tag. It builds exactly
+`vcf_sv_stats-1.0.1-py3-none-any.whl`; no other distribution format is built.
 
 After the tag-ref run succeeds, download and verify the exact universal wheel,
 make the repository public, enable and read back private vulnerability

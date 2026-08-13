@@ -15,11 +15,18 @@ to the GitHub release. A Conda environment uses pip with that identical URL; no
 native Conda package or channel is published.
 
 The tranche is complete only when the branch is merged normally, the annotated
-`1.0.1` tag is qualified by the existing distribution workflow on the tag ref,
-the repository and release are public, and clean ordinary and Conda Python
-environments install and verify the same anonymous wheel URL. PyPI, Bioconda,
+`1.0.1` tag produces exactly one universal wheel, the repository and release
+are public, and ordinary and Conda Python environments can install the same
+anonymous wheel URL with pip. PyPI, Bioconda,
 Conda channels, container registries, Sigstore publication, public-upstream
 MultiQC work, and a renewed full design audit are outside this tranche.
+
+Controlling correction: do not run or resume the broad distribution matrix.
+Run `31755170704` was cancelled at the user's direction. The active workflow is
+limited to a manually dispatched build of one `py3-none-any` wheel from the
+`1.0.1` tag; it must not build source archives, Conda packages, OCI images,
+Apptainer images, SBOMs, provenance, or a platform/Python matrix. The already
+completed local internal tests are sufficient; do not start another test suite.
 
 For this tranche only, this amendment supersedes the historical instruction to
 keep the repository private. Every other safety, neutrality, identity, fixture,

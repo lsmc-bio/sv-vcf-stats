@@ -10,6 +10,7 @@ Date: 2026-08-13
 - MultiQC boundary: integrate and qualify against the organization-owned MultiQC fork; do not merge into or otherwise modify upstream `MultiQC/MultiQC` or `MultiQC/test-data`
 - Historical publication boundary: keep the repository private through the `1.0.0` candidate release and do not upload registry artifacts.
 - Controlling 2026-08-13 amendment: preserve all completed work, continue on `codex/public-release-candidate`, release annotated `1.0.1`, make the repository public, and upload only the universal wheel plus its checksum to GitHub Releases. Pip in an ordinary environment and pip inside Conda must use the identical anonymous release URL. PyPI, Bioconda, native Conda channels, container registries, Sigstore publication, and public-upstream MultiQC work remain unauthorized.
+- Controlling ASAP correction: do not run or resume the broad distribution matrix and do not start another test suite. Run `31755170704` was cancelled at the user's direction. `.github/workflows/distribution.yml` is limited to a manual build of exactly one tag-derived universal wheel. Move directly through PR merge, annotated tag, public GitHub release, and pip installation from the public URL.
 
 ## Gate 0: inventory freeze
 
@@ -48,6 +49,7 @@ Date: 2026-08-13
 - Repository `lsmc-bio/sv-vcf-stats` is private with default branch `main`; active ruleset `core` has ID `4066222`. Code security, Dependabot security updates, secret scanning, non-provider patterns, validity checks, and push protection are enabled; open secret-scanning alerts total zero.
 - Private vulnerability reporting returns `404` while the repository is private. Its `true` read-back is mandatory after visibility changes and before the public release.
 - Fixture manifest SHA-256 is `d06b0027678020eb132ca91b20156dd34b380eeaf5fc7184219a10434de40cca`. No fixture, runtime, schema, adapter, statistics, or MultiQC change is authorized by this tranche.
+- PR `#13` initially started legacy broad-distribution run `31755170704`. The user rejected that scope; the run was cancelled and is not release evidence. It must not be resumed or redispatched.
 
 ## Promotion ledger
 
@@ -81,12 +83,12 @@ Date: 2026-08-13
 | URL-SCAN-001 | Neutrality | Permit only the exact administrative GitHub repository coordinate in source/history scans while continuing to reject the owner token elsewhere | SUCCESS | contract_test | Gate 7 | orchestrator | `tools/scan_tokens.py --source-github-repository`; regressions in `tests/test_token_scanner.py`; source, history, wheel, and source-archive scans returned zero findings |  | Exact repository and GitHub-generated merge coordinates are administrative; product names, schemas, outputs, unrelated prose, and random Git object IDs receive no exception. |
 | URL-PR-001 | GitHub | Commit, push, review, and merge the amended branch through the normal protected PR path | OPEN | release | Gate 7 | orchestrator | Pending |  |  |
 | URL-TAG-001 | Version | Create and push immutable annotated tag `1.0.1` on the exact clean merge commit | OPEN | release | Gate 8 | orchestrator | Pending |  |  |
-| URL-QUAL-001 | Qualification | Run the existing full distribution workflow on tag ref `1.0.1` and verify the exact wheel | OPEN | contract_test | Gate 8 | orchestrator | Pending |  |  |
+| URL-QUAL-001 | Wheel build | Build exactly one `py3-none-any` wheel from tag ref `1.0.1` with the narrowed manual workflow | OPEN | release | Gate 8 | orchestrator | Legacy broad run `31755170704` was cancelled; it is not evidence and must not be resumed |  | No test matrix, sdist, Conda package, OCI, Apptainer, SBOM, provenance, signing, or registry publication. |
 | URL-VIS-001 | Visibility | Make the repository public, enable private vulnerability reporting, and read back security/rules settings | OPEN | legitimate_safety_handling | Gate 8 | orchestrator | Pending |  |  |
 | URL-REL-001 | Release | Publish GitHub release `1.0.1` with only the exact-tag wheel and `SHA256SUMS` | OPEN | release | Gate 8 | orchestrator | Pending |  |  |
 | URL-PIP-001 | Public install | Install the anonymous wheel URL into a clean ordinary Python 3.13 environment and run version plus installed verifier | OPEN | contract_test | Gate 8 | orchestrator | Pending |  |  |
 | URL-CONDA-PIP-001 | Public install | Install the identical anonymous wheel URL with pip inside a clean Conda Python 3.13 environment and run version plus installed verifier | OPEN | contract_test | Gate 8 | orchestrator | Pending |  |  |
-| URL-CLOSE-001 | Closure | Record release URL, SHAs, workflow run, checksum, visibility, and both public-install receipts in a merged closeout | OPEN | plan_amendment | Gate 8 | orchestrator | Pending |  |  |
+| URL-CLOSE-001 | Closure | Record release URL, SHAs, one-wheel build run, checksum, visibility, and both public pip-install receipts in a merged closeout | OPEN | plan_amendment | Gate 8 | orchestrator | Pending |  |  |
 
 ## Gates
 
@@ -100,7 +102,7 @@ Date: 2026-08-13
 | Gate 5 | Exact merged default-branch source qualification and source-state scans pass before the private tag; no visibility change or registry publication occurs. |
 | Gate 6 | The independent-review handoff is merged; the annotated tool tag receives full version-matching distribution qualification before its private GitHub release; maintained-fork tag and release evidence is terminal. Repository visibility and registries remain unchanged. |
 | Gate 7 | Preserve and amend the existing handoff/ledger, pass local qualification, and merge the existing release-candidate branch normally. |
-| Gate 8 | Qualify annotated `1.0.1` on its tag ref, publish only the GitHub wheel/checksum, prove the same anonymous URL in ordinary and Conda pip environments, and merge the closeout evidence. |
+| Gate 8 | Build one universal wheel from annotated `1.0.1`, publish only that GitHub wheel/checksum, prove the same anonymous URL in ordinary and Conda pip environments, and merge the closeout evidence. Do not resume the broad distribution matrix or run another test suite. |
 
 ## Final report
 
@@ -124,4 +126,5 @@ Public repository visibility and the `1.0.1` GitHub wheel/checksum are authorize
 - 2026-08-13: Automated release review identified that untagged `setuptools-scm` artifacts carry a development version. QUAL-002 now makes full exact-tag `1.0.0` qualification a hard prerequisite for the private GitHub release.
 - 2026-08-13: Live reconciliation found that `1.0.0` is annotated and its private GitHub release exists, but distribution run `31745544787` used `main`, not the tag ref. QUAL-002 is therefore `NO_LONGER_NEEDED` rather than falsely successful; URL-QUAL-001 carries the exact-tag proof forward to immutable patch release `1.0.1`.
 - 2026-08-13: The user narrowed the active tranche to one public GitHub release wheel URL used by pip both normally and inside Conda, while preserving all prior work and deferring the skeptical full-design review. No native Conda or registry publication is included.
+- 2026-08-13: The user explicitly stopped the legacy broad distribution matrix. Run `31755170704` was cancelled, the workflow was reduced to a manual one-wheel build, and the ledger forbids resuming that matrix or starting another test suite in this tranche.
 - 2026-08-13: Gate 7 local qualification passed: Ruff and strict mypy are green; 119 tests pass; branch coverage is 82 percent; 21 fixtures and 1,186 records verify; focused release tests pass; source, history, wheel, and source-archive scans report zero findings. A locally built `1.0.1` wheel reports the exact version, carries the three GitHub project URLs, installs under Python 3.13, and passes `vcf-sv-stats-verify-install`.
