@@ -128,6 +128,23 @@ def test_github_administrative_exception_is_narrow() -> None:
             b"product output names /" + b"mnt" + b"/private/output",
         )
     )
+    merge_message = b"Merge pull request #7 from hosting-org/codex/release"
+    assert not scan_tokens.contains_token(
+        scan_tokens.neutralize_github_administrative_context(
+            "hosting-org/project",
+            "git:messages",
+            merge_message,
+        ),
+        policy,
+    )
+    assert scan_tokens.contains_token(
+        scan_tokens.neutralize_github_administrative_context(
+            "hosting-org/project",
+            "source:content:notes.md",
+            merge_message,
+        ),
+        policy,
+    )
     assert scan_tokens.contains_structural_marker(
         scan_tokens.neutralize_github_administrative_context(
             "hosting-org/project",
@@ -135,6 +152,31 @@ def test_github_administrative_exception_is_narrow() -> None:
             runner_home + b"-owned/product-output",
         )
     )
+
+
+def test_source_scanner_allows_only_exact_administrative_repository_coordinate(
+    tmp_path: Path,
+) -> None:
+    organization = b"hosting-org"
+    policy = (_digest(organization),)
+    (tmp_path / "release.md").write_bytes(
+        b"https://github.com/hosting-org/project/releases/download/1.0.1/package.whl"
+    )
+
+    assert scan_tokens.scan_tree(
+        tmp_path,
+        policy,
+        structural=False,
+        administrative_repository="hosting-org/project",
+    ) == set()
+
+    (tmp_path / "product.txt").write_bytes(b"product output names hosting-org")
+    assert scan_tokens.scan_tree(
+        tmp_path,
+        policy,
+        structural=False,
+        administrative_repository="hosting-org/project",
+    ) == {"content:product.txt"}
 
 
 def test_github_json_handles_root_endpoint_and_flattens_pages(monkeypatch: Any) -> None:
