@@ -34,7 +34,7 @@ referencing==0.37.0
     #   jsonschema-specifications
 rfc8785==0.1.4
     # via vcf-sv-stats
-rich==14.3.4
+rich==15.0.0
     # via
     #   cli-core-yo
     #   typer
