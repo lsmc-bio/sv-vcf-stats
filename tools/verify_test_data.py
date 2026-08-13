@@ -14,6 +14,7 @@ import pysam
 from vcf_sv_stats.serialization import file_sha256
 
 SUBJECT = "HG002"
+REDISTRIBUTION_STATUS = "reviewed-public-release-candidate-2026-08-13"
 SUBJECT_TOKEN = re.compile(r"(?i)\b(?:HG\d{3}|NA\d{5}|GM\d{5})\b")
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
@@ -69,7 +70,7 @@ def verify(root: Path) -> dict[str, int]:
             raise ValueError(f"Fixture manifest subject mismatch: {entry['fixture_id']}")
         if entry.get("source_sha256") not in evidence_digests:
             raise ValueError(f"Fixture source lacks HG002 identity evidence: {entry['fixture_id']}")
-        if entry.get("redistribution_status") != "reviewed-public-derived-data":
+        if entry.get("redistribution_status") != REDISTRIBUTION_STATUS:
             raise ValueError(f"Fixture redistribution review is incomplete: {entry['fixture_id']}")
         if entry.get("oversized_relationship_exclusions"):
             fixture_id = entry["fixture_id"]
@@ -95,6 +96,9 @@ def verify(root: Path) -> dict[str, int]:
     for derived in manifest.get("derived_parity_artifacts", []):
         if derived.get("subject") != SUBJECT:
             raise ValueError(f"Derived fixture subject mismatch: {derived['fixture_path']}")
+        if derived.get("redistribution_status") != REDISTRIBUTION_STATUS:
+            fixture_path = derived["fixture_path"]
+            raise ValueError(f"Derived fixture redistribution review is incomplete: {fixture_path}")
         path = root / derived["fixture_path"]
         expected_variant_paths.add(path)
         if file_sha256(path) != derived.get("fixture_sha256"):

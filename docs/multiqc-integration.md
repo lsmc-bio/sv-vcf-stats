@@ -1,11 +1,10 @@
 # MultiQC producer integration
 
 This document defines the boundary between `vcf-sv-stats` and its native
-MultiQC contribution. The implementation is under ordinary upstream review in
-[MultiQC pull request 3626](https://github.com/MultiQC/MultiQC/pull/3626), with
-the companion public fixture contribution in
-[MultiQC test-data pull request 385](https://github.com/MultiQC/test-data/pull/385).
-Neither draft has been merged or shipped.
+MultiQC consumer. The implementation and its neutral HG002 summary fixture are
+merged in a maintained organization fork. Earlier public-upstream drafts were
+closed without merge after the equivalent fork integration landed. Any future
+external upstream proposal is a separately reviewed and approved action.
 
 ## Boundary
 
@@ -104,13 +103,11 @@ and deterministic-order behavior.
 
 See the [output contract](output-contract.md) for exact artifact semantics.
 
-## Upstream review boundary
+## Maintained-fork boundary
 
-The native module belongs upstream under that project's license, review,
-typing, snapshot, and strict-mode requirements. The draft implements strict
-discovery and digest validation, deterministic conflict handling, 11 native
-report sections, focused tests, and fixture snapshots. Merge, release, and an
-announcement of shipped compatibility remain decisions outside this
-repository. Core `vcf-sv-stats` code continues to provide the digest-bound
-producer artifact and executable consumer-side reference contract without
-importing MultiQC.
+The native module remains under the consumer project's license, review, typing,
+snapshot, and strict-mode requirements. The maintained-fork implementation has
+strict discovery and digest validation, deterministic conflict handling, 11
+native report sections, focused tests, and a neutral fixture. Core
+`vcf-sv-stats` code continues to provide the digest-bound producer artifact and
+executable consumer-side reference contract without importing MultiQC.

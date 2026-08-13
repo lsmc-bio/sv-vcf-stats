@@ -10,7 +10,7 @@
   <img alt="Python 3.11 through 3.13" src="https://img.shields.io/badge/Python-3.11%E2%80%933.13-3776AB?logo=python&amp;logoColor=white">
   <img alt="VCF and BCF" src="https://img.shields.io/badge/input-VCF%20%7C%20BCF-7B61FF">
   <img alt="Apache License 2.0" src="https://img.shields.io/badge/license-Apache--2.0-2EA44F">
-  <img alt="pre-1.0" src="https://img.shields.io/badge/status-pre--1.0-F59E0B">
+  <img alt="1.0 release candidate" src="https://img.shields.io/badge/status-1.0%20release%20candidate-F59E0B">
   <img alt="no telemetry" src="https://img.shields.io/badge/telemetry-none-111827">
 </p>
 
@@ -27,10 +27,12 @@ streams records into a canonical observation model, resolves relationships on
 disk, reports layered diagnostics, and emits deterministic JSON whose metrics
 name their grain and denominator.
 
-> **Project status:** this is a private, pre-1.0 release candidate. The complete
-> fixed v1 acceptance plan is implemented and qualification evidence is retained
-> in the repository. Public visibility, package or image publication, upstream
-> merge, and the `1.0.0` tag remain explicit approval gates.
+> **Project status:** this is a complete 1.0 public-release candidate under
+> non-public qualification. The fixed v1 acceptance plan is implemented and its
+> evidence is retained in the repository. The private `1.0.0` GitHub release
+> records the qualified commit without changing visibility or publishing to a
+> registry. Public visibility, package or image publication, and external
+> upstream contribution remain explicit approval gates.
 
 ## The 30-second tour
 
@@ -140,7 +142,7 @@ confirmed retrieval of one pinned public reference profile.
 
 ### Development checkout
 
-The package is not published while it is pre-1.0. From a checkout:
+The package is not published to a registry. From a checkout:
 
 ```bash
 uv sync --locked --all-extras
@@ -359,7 +361,8 @@ names—not source rows or private paths. See [SECURITY.md](SECURITY.md).
 | [Performance qualification](docs/benchmarks/20260813_streaming_qualification.md) | 100K through 10M scaling, memory, baseline, threads, and interruption evidence |
 | [Distribution guide](docs/distribution.md) | Offline install, Bioconda, OCI, Apptainer, SBOM, and provenance contract |
 | [MultiQC integration](docs/multiqc-integration.md) | Producer/consumer boundary for aggregate reporting |
-| [Normative specification](docs/specifications/vcf-sv-stats-1.0.0.md) | Pre-1.0 requirements and stable terminology |
+| [Normative specification](docs/specifications/vcf-sv-stats-1.0.0.md) | 1.0 requirements and stable terminology |
+| [1.0.0 release notes](docs/releases/1.0.0.md) | Qualified feature, evidence, and publication boundaries |
 | [Implementation ledger](docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) | Acceptance evidence, completion accounting, and release gates |
 
 ## Release boundary
@@ -369,11 +372,13 @@ VCF 4.5 behavior, source/merged comparison, canonical multiallelic
 normalization, native aggregate reporting, large-callset qualification, and
 offline multi-platform distribution evidence all have executable proofs.
 
-That does not silently turn a private candidate into a release. The repository
-remains private and pre-1.0. No package or container has been published, no
-public visibility change or version tag has been made, fixture redistribution
-must be reviewed again before public release, and the draft native MultiQC
-contribution still requires ordinary upstream review and merge.
+That does not silently make the project public. The repository remains
+non-public pending separate approval. The private `1.0.0` tag and GitHub release
+record this qualified source state; no package or container has been published
+to a registry and no public visibility change has been made. Fixture
+redistribution has a dated release-candidate review. Native MultiQC integration
+is qualified in a maintained fork; any external upstream contribution remains a
+later, independently reviewed action.
 
 `caller-lossless` remains a reserved, unsupported profile, and every lossy
 authorization remains rejected because v1 implements no lossy transform.

@@ -197,6 +197,37 @@ def test_readme_corpus_and_dependency_claims_match_metadata() -> None:
         assert f"`{dependency}`" in readme
 
 
+def test_current_documentation_uses_release_candidate_status() -> None:
+    current_status_documents = (
+        ROOT / "README.md",
+        ROOT / "SECURITY.md",
+        ROOT / "docs/README.md",
+        ROOT / "docs/distribution.md",
+        ROOT / "docs/operator-guide.md",
+        ROOT / "docs/specifications/vcf-sv-stats-1.0.0.md",
+        ROOT / "docs/benchmarks/20260813_streaming_qualification.md",
+        ROOT / "docs/releases/1.0.0.md",
+    )
+
+    for document in current_status_documents:
+        assert "pre-1.0" not in document.read_text(encoding="utf-8").casefold()
+
+
+def test_fixture_governance_covers_every_reviewed_artifact() -> None:
+    manifest = json.loads((ROOT / "test_data/manifest.json").read_text(encoding="utf-8"))
+    governance = (ROOT / "docs/fixture-governance.md").read_text(encoding="utf-8")
+    expected_status = "reviewed-public-release-candidate-2026-08-13"
+    artifacts = [*manifest["fixtures"], *manifest["derived_parity_artifacts"]]
+
+    assert len(manifest["fixtures"]) == 21
+    assert len(manifest["derived_parity_artifacts"]) == 2
+    assert {artifact["redistribution_status"] for artifact in artifacts} == {expected_status}
+    for artifact in manifest["fixtures"]:
+        assert f"`{artifact['fixture_id']}`" in governance
+    for artifact in manifest["derived_parity_artifacts"]:
+        assert f"`{Path(artifact['fixture_path']).name}`" in governance
+
+
 def test_every_emitted_diagnostic_is_explainable() -> None:
     source_root = ROOT / "src/vcf_sv_stats"
     emitted = {

@@ -25,28 +25,62 @@ sanitization version, output/index digests, and redistribution status. The
 plain/compressed query pair comes from one selection. The BCF fixture is derived
 from the matching sanitized VCF for semantic parity testing.
 
-## Redistribution decision
+## Public-release-candidate redistribution review
 
-The per-fixture status `reviewed-public-derived-data` records this decision:
+Review date: 2026-08-13. The exact per-artifact manifest disposition is
+`reviewed-public-release-candidate-2026-08-13`.
 
-- HG002 was selected for broad public and commercial redistribution, and
-  [NIST Genome in a Bottle](https://www.nist.gov/programs-projects/genome-bottle)
-  describes its sequencing data and analyses as publicly available without a
-  publication embargo.
-- A fixture contains only a deterministic excerpt of variant observations from
-  that public subject, rebuilt neutral headers, and factual producer/version
-  attribution. It contains no caller source code or binary, command line,
-  source path, run metadata, original record identifier, or original complete
-  VCF.
-- The same review was applied independently to every manifest entry. An entry
-  without that exact status causes generation to fail; the builder never
-  substitutes a different source.
+The review applied these tests independently to all 21 source-derived fixtures
+and both parity artifacts:
 
-The software license of a named caller remains its author's license and is not
-relicensed by this repository. Fixture redistribution must be reviewed again
-before the repository's first public release, particularly if the source
-corpus, selection, or retained annotations change. This engineering review is
-not legal advice.
+- [NIST Genome in a Bottle](https://www.nist.gov/programs-projects/genome-bottle)
+  identifies the HG002 family among samples consented for commercial
+  redistribution and describes GIAB sequencing data and analyses as publicly
+  available without publication embargo.
+- Every retained observation is HG002-only and digest-linked to the inspected
+  single-subject source corpus. The verifier rejects any other `HG###`,
+  `NA#####`, or `GM#####` subject token.
+- Each fixture is a deterministic, heavily reduced set of factual variant
+  observations with an allowlist-rebuilt header. No raw read, full source VCF,
+  original record identifier, caller command, source path, host, user, run
+  metadata, caller source code, or caller binary is included.
+- Producer and version strings are factual provenance. The review does not
+  relicense caller software, and fixture eligibility does not depend on treating
+  proprietary caller code as open source.
+- The BCF and plain VCF entries are format-parity derivations of already
+  reviewed sanitized fixtures; they introduce no additional subject or source.
+
+`Pass` below means that the artifact satisfies this engineering redistribution
+boundary and carries the exact manifest disposition above. It does not publish
+the repository or replace counsel. A changed source digest, sanitization policy,
+selection, retained field set, or subject invalidates the review and requires a
+new dated disposition.
+
+| Fixture | Source basis | Records | Digest evidence | Decision |
+|---|---|---:|---|---|
+| `dysgu.native` | HG002 dysgu native output | 51 | source `1746c758d8a3`; fixture `7b30467ab795` | Pass |
+| `dysgu.normalized` | HG002 dysgu normalized output | 51 | source `832b5071212d`; fixture `a7e4b8cc4745` | Pass |
+| `jasmine.merged` | HG002 Jasmine merged output | 100 | source `11d2d2d2be3d`; fixture `f56ed41870d9` | Pass |
+| `manta.native` | HG002 Manta native output | 100 | source `18acfd53eeb4`; fixture `67bbb20e722e` | Pass |
+| `manta.normalized` | HG002 Manta normalized output | 100 | source `4363257a79ae`; fixture `2a2ac0c79684` | Pass |
+| `octopusv.merged` | HG002 OctopuSV merged output | 100 | source `b05375fe0087`; fixture `e7a74cd1e82a` | Pass |
+| `sentieon.cnvscope` | HG002 CNVscope output | 12 | source `c81e769963be`; fixture `093f0c0f0b50` | Pass |
+| `sentieon.longreadsv.native` | HG002 LongReadSV native output | 12 | source `520d37333d86`; fixture `31afd9056518` | Pass |
+| `sentieon.longreadsv.normalized` | HG002 LongReadSV normalized output | 12 | source `b67a19adc482`; fixture `8957179ce01f` | Pass |
+| `sniffles2.native` | HG002 Sniffles2 native output | 55 | source `d5ba5057f518`; fixture `2c7b7d846325` | Pass |
+| `sniffles2.normalized` | HG002 Sniffles2 normalized output | 55 | source `02bb7fa2af41`; fixture `379a33632795` | Pass |
+| `survivor.merged` | HG002 SURVIVOR merged output | 100 | source `a215fcc82267`; fixture `190e652d7b8e` | Pass |
+| `tiddit.native` | HG002 TIDDIT native output | 24 | source `e84e6099b706`; fixture `d17b8c5217df` | Pass |
+| `tiddit.normalized` | HG002 TIDDIT normalized output | 14 | source `1bfa3c258886`; fixture `9417be64aed1` | Pass |
+| `tiddit.reference-repaired` | HG002 TIDDIT reference-repaired output | 24 | source `003c0a8d786c`; fixture `433ce408f019` | Pass |
+| `trussv.merged` | HG002 TrusSV merged output | 98 | source `838672a7542c`; fixture `657b7c716207` | Pass |
+| `truvari.query` | HG002 Truvari query role | 68 | source `2154caedee92`; fixture `a2bc5e27ebf5` | Pass |
+| `truvari.fn` | HG002 Truvari false-negative role | 92 | source `acd3002d9a31`; fixture `dba4effcbc35` | Pass |
+| `truvari.fp` | HG002 Truvari false-positive role | 18 | source `0080f3c2d9cb`; fixture `30a4b4ec89f6` | Pass |
+| `truvari.tp-base` | HG002 Truvari base true-positive role | 50 | source `2d813a064191`; fixture `bcfcaaddc9c5` | Pass |
+| `truvari.tp-comp` | HG002 Truvari query true-positive role | 50 | source `8751d3514e55`; fixture `e83aa3829477` | Pass |
+| `manta.native.hg002.subset.bcf` | BCF parity derivation of reviewed Manta fixture | 100 | artifact `119f77cf4d82` | Pass |
+| `truvari.query.hg002.subset.vcf` | Plain VCF parity derivation of reviewed Truvari fixture | 68 | artifact `b0caf44433d0` | Pass |
 
 Regeneration procedure:
 

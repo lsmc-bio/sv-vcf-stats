@@ -1,8 +1,9 @@
 # Distribution qualification
 
-`vcf-sv-stats` is a private pre-1.0 candidate. This guide defines how a
-candidate proves installability and supply-chain evidence without publishing a
-package, container, Conda artifact, or release.
+`vcf-sv-stats` is a 1.0 public-release candidate under non-public
+qualification. This guide defines how a candidate proves installability and
+supply-chain evidence without changing repository visibility or publishing a
+package, container, or Conda artifact to a registry.
 
 ## Supported target contract
 
@@ -85,10 +86,24 @@ dependencies, native tooling, and reviewed HG002 fixture corpus. It emits:
 - an exact runtime-license inventory;
 - OCI platform attestations and audit receipt when a container is included.
 
-The workflow signs the candidate provenance blob with an ephemeral local
-Cosign key and immediately verifies it. That proves the qualification wiring;
-a later release needs an explicitly approved durable signing identity and a new
-exact-candidate run.
+The durable signing path uses Sigstore keyless signing on an exact default-branch
+manual qualification. GitHub Actions supplies a short-lived OIDC identity; no
+long-lived key or repository signing secret exists. Verification requires both
+the exact workflow identity
+`$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF` and issuer
+`https://token.actions.githubusercontent.com`.
+
+Pull-request runs and default manual qualifications build and scan unsigned
+candidate evidence. Signing additionally requires the explicit
+`publish_sigstore_entry=true` dispatch input and the repository's exact default
+branch. This is a separate public-write gate because Sigstore records signing
+metadata and the artifact digest in its public transparency log; it does not
+publish artifact contents. A private candidate release must leave the input
+false unless public signing metadata is separately approved.
+
+The Sigstore bundle necessarily contains the administrative repository and
+workflow identity. That identity is the sole hosting exception to product
+neutrality and is verified separately from product-owned content.
 
 ## Run the gates
 

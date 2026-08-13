@@ -30,6 +30,7 @@ from vcf_sv_stats.serialization import file_sha256, json_bytes
 
 SUBJECT = "HG002"
 SANITIZATION_VERSION = "fixture-sanitizer/1"
+REDISTRIBUTION_STATUS = "reviewed-public-release-candidate-2026-08-13"
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
 MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
@@ -65,7 +66,7 @@ class SourceSpec:
     relative_path: str
     fixture_name: str
     source_signature: str
-    redistribution_status: str = "reviewed-public-derived-data"
+    redistribution_status: str = REDISTRIBUTION_STATUS
 
 
 SOURCES: tuple[SourceSpec, ...] = (
@@ -703,6 +704,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": parity_record_count,
                     "derived_from": parity_source.name,
                     "subject": SUBJECT,
+                    "redistribution_status": REDISTRIBUTION_STATUS,
                 },
                 {
                     "fixture_path": str(query_plain.relative_to(stage)),
@@ -710,6 +712,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": query_record_count,
                     "derived_from": "truvari.query.hg002.subset.vcf.gz",
                     "subject": SUBJECT,
+                    "redistribution_status": REDISTRIBUTION_STATUS,
                 },
             ],
             "totals": {
@@ -732,7 +735,9 @@ def build(source_dir: Path, output_dir: Path) -> None:
             "Each manifest entry records the fixture-level redistribution decision. The\n"
             "fixtures contain factual public-subject observations and factual\n"
             "producer/version attribution, not caller source code or binaries. Caller\n"
-            "software remains subject to its own license.\n",
+            "software remains subject to its own license. The fixture corpus was\n"
+            "re-reviewed for public-release-candidate use on 2026-08-13; publication\n"
+            "remains a separately approved gate.\n",
             encoding="utf-8",
         )
         if corpus_records > MAX_CORPUS_RECORDS:

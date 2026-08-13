@@ -40,7 +40,7 @@ def test_license_inventory_exactly_matches_runtime_lock() -> None:
     value = _inventory(ROOT / "packaging/runtime-licenses.json", ROOT / "requirements.lock.txt")
     assert value["project"]["license_expression"] == "Apache-2.0"
     assert any(item["name"] == "htslib" for item in value["native"])
-    assert value["fixtures"]["public_release_review_required"] is True
+    assert value["fixtures"]["public_release_review_required"] is False
 
 
 def test_release_evidence_binds_candidate_artifacts(tmp_path: Path) -> None:

@@ -3,6 +3,12 @@ name: Distribution qualification
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish_sigstore_entry:
+        description: Publish signing metadata to the public Sigstore transparency log
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -151,6 +157,9 @@ jobs:
   oci:
     name: Multi-architecture OCI, SBOM, and provenance
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -210,7 +219,7 @@ jobs:
               > "/tmp/product-owned/$architecture/image-config.json"
             docker rm "$container_id"
           done
-      - name: Build aggregate SBOM, checksums, and signed candidate provenance
+      - name: Build aggregate SBOM, checksums, and candidate provenance
         env:
           SOURCE_DATE_EPOCH: "315532800"
         run: |
@@ -224,20 +233,33 @@ jobs:
             --output-dir release --source-commit "$GITHUB_SHA" \
             --created 1980-01-01T00:00:00Z \
             --invocation-id "github-actions-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          export COSIGN_PASSWORD="$(openssl rand -hex 32)"
-          cosign generate-key-pair --output-key-prefix /tmp/candidate
-          cosign sign-blob --yes --key /tmp/candidate.key \
+      - name: Sign and verify provenance with the default-branch workflow identity
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_sigstore_entry
+        run: |
+          test "$GITHUB_REF" = "refs/heads/${{ github.event.repository.default_branch }}"
+          certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"
+          expected_prefix="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/distribution.yml@refs/heads/"
+          case "$certificate_identity" in
+            "$expected_prefix"*) ;;
+            *) exit 1 ;;
+          esac
+          cosign sign-blob --yes \
             --bundle release/candidate.provenance.sigstore.json \
             release/candidate.provenance.intoto.json
-          cosign verify-blob --key /tmp/candidate.pub \
+          cosign verify-blob \
             --bundle release/candidate.provenance.sigstore.json \
+            --certificate-identity "$certificate_identity" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             release/candidate.provenance.intoto.json
-          cp /tmp/candidate.pub release/candidate.cosign.pub
       - name: Scan the OCI archive and every evidence artifact
         run: |
           mkdir /tmp/oci-archive-scan /tmp/release-neutrality-scan
           cp /tmp/vcf-sv-stats.oci.tar /tmp/oci-archive-scan/candidate.oci.tar
-          cp release/candidate.* release/oci-audit.json \
+          cp release/candidate.checksums.txt \
+            release/candidate.cyclonedx.json \
+            release/candidate.provenance-predicate.json \
+            release/candidate.provenance.intoto.json \
+            release/candidate.spdx.json release/oci-audit.json \
             /tmp/release-neutrality-scan/
           uv run python tools/scan_tokens.py \
             --root /tmp/oci-archive-scan \

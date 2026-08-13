@@ -159,10 +159,11 @@ def build(
             for item in [*fixture_value["fixtures"], *fixture_value["derived_parity_artifacts"]]
         }
     )
-    fixture_statuses = sorted(
-        {str(item["redistribution_status"]) for item in fixture_value["fixtures"]}
-    )
-    if fixture_subjects != ["HG002"] or fixture_statuses != ["reviewed-public-derived-data"]:
+    fixture_items = [*fixture_value["fixtures"], *fixture_value["derived_parity_artifacts"]]
+    fixture_statuses = sorted({str(item["redistribution_status"]) for item in fixture_items})
+    if fixture_subjects != ["HG002"] or fixture_statuses != [
+        "reviewed-public-release-candidate-2026-08-13"
+    ]:
         raise UsageError("fixture license evidence is not terminal and single-subject")
 
     artifacts = [
@@ -191,7 +192,7 @@ def build(
         "licenses": [_license(inventory["fixtures"]["license_expression"])],
         "properties": [
             {"name": "vcf-sv-stats:subject", "value": "HG002"},
-            {"name": "vcf-sv-stats:public-release-review-required", "value": "true"},
+            {"name": "vcf-sv-stats:public-release-review-required", "value": "false"},
         ],
     }
     artifact_components = [
@@ -331,7 +332,7 @@ def build(
                 "annotator": "Tool: vcf-sv-stats-release-evidence-1",
                 "comment": (
                     f"Native component package index begins at {native_start}; "
-                    "fixture public-release review remains required."
+                    "fixture redistribution is reviewed; publication approval remains required."
                 ),
             }
         ],
@@ -340,7 +341,7 @@ def build(
                 "licenseId": "LicenseRef-Public-Data-Redistribution-Reviewed",
                 "extractedText": (
                     "Public HG002-derived fixture redistribution was reviewed for this "
-                    "private candidate. Review is required again before public release."
+                    "public release candidate. Publication remains a separately approved gate."
                 ),
                 "name": "Public data redistribution review",
             }

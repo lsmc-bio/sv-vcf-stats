@@ -21,8 +21,8 @@ does not prove SV semantics, event completeness, or normalization safety.
 
 ## Install from a checkout
 
-The package is intentionally unpublished during private pre-1.0 development.
-Python 3.11 through 3.13 is supported.
+The package is intentionally unpublished while public-release authorization is
+pending. Python 3.11 through 3.13 is supported.
 
 ```bash
 uv sync --locked --all-extras
