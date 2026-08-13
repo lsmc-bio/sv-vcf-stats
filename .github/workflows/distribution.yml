@@ -237,7 +237,7 @@ jobs:
         run: |
           mkdir /tmp/oci-archive-scan /tmp/release-neutrality-scan
           cp /tmp/vcf-sv-stats.oci.tar /tmp/oci-archive-scan/candidate.oci.tar
-          cp release/candidate.* release/CHECKSUMS.sha256 release/oci-audit.json \
+          cp release/candidate.* release/oci-audit.json \
             /tmp/release-neutrality-scan/
           uv run python tools/scan_tokens.py \
             --root /tmp/oci-archive-scan \

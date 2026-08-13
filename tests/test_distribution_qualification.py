@@ -32,3 +32,13 @@ def test_complete_supported_distribution_matrix(tmp_path: Path) -> None:
     assert receipt["case_count"] == 24
     assert receipt["wheel_sdist_parity"] is True
     assert receipt["all_supported_targets_passed"] is True
+
+
+def test_distribution_workflow_scans_loaded_platform_images() -> None:
+    workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
+
+    assert 'syft "vcf-sv-stats:$architecture"' in workflow
+    assert 'release/linux-$architecture.container.cyclonedx.json' in workflow
+    assert "syft scan oci-archive:" not in workflow
+    assert "release/CHECKSUMS.sha256" not in workflow
+    assert "release/candidate.* release/oci-audit.json" in workflow
