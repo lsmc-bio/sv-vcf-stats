@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:streaming-benchmark:1.0.0",
+  "title": "vcf-sv-stats streaming benchmark receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "environment", "measurement_policy", "inputs", "receipt_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.streaming-benchmark"},
+    "schema_version": {"const": "1.0.0"},
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operating_system", "operating_system_release", "machine", "cpu_model", "logical_cpu_count", "total_memory_bytes", "filesystem_type", "python_implementation", "python_version", "tool_version", "pysam_version", "htslib_version", "temp_monitor_interval_ms", "source_commit"],
+      "properties": {
+        "operating_system": {"type": "string", "minLength": 1},
+        "operating_system_release": {"type": "string", "minLength": 1},
+        "machine": {"type": "string", "minLength": 1},
+        "cpu_model": {"type": "string", "minLength": 1},
+        "logical_cpu_count": {"type": ["integer", "null"], "minimum": 1},
+        "total_memory_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "filesystem_type": {"type": "string", "minLength": 1},
+        "python_implementation": {"type": "string", "minLength": 1},
+        "python_version": {"type": "string", "minLength": 1},
+        "tool_version": {"type": "string", "minLength": 1},
+        "pysam_version": {"type": "string", "minLength": 1},
+        "htslib_version": {"type": "string", "minLength": 1},
+        "temp_monitor_interval_ms": {"const": 10},
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "measurement_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clock", "memory", "temporary_space", "cache", "baseline", "paths"],
+      "properties": {
+        "clock": {"const": "monotonic_wall_clock"},
+        "memory": {"const": "fresh_process_peak_rss_including_native_libraries"},
+        "temporary_space": {"const": "10ms_recursive_size_sampling"},
+        "cache": {"const": "first-process-cold-label_without_os_cache_eviction_then_warm"},
+        "baseline": {"type": "string", "pattern": "^minimal_sequential_pysam_[0-9.]+_record_scan$"},
+        "paths": {"const": "basename_only"}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input_name", "input_bytes", "container", "measurements", "deterministic_stats_payload"],
+        "properties": {
+          "input_name": {"type": "string", "minLength": 1},
+          "input_bytes": {"type": "integer", "minimum": 1},
+          "container": {"enum": ["vcf", "vcf.gz", "bcf"]},
+          "deterministic_stats_payload": {"type": "boolean"},
+          "measurements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "threads", "repetition", "cache_state", "elapsed_ns", "user_cpu_ns", "system_cpu_ns", "records", "alleles", "samples", "contigs", "records_per_second", "input_bytes_per_second", "process_peak_rss_bytes", "temporary_peak_bytes", "temporary_final_bytes", "output_json_bytes", "payload_sha256"],
+              "properties": {
+                "mode": {"enum": ["stats", "pysam"]},
+                "threads": {"type": "integer", "minimum": 1},
+                "repetition": {"type": "integer", "minimum": 1},
+                "cache_state": {"enum": ["cold_process_uncontrolled_os_cache", "warm_process_uncontrolled_os_cache"]},
+                "elapsed_ns": {"type": "integer", "minimum": 1},
+                "user_cpu_ns": {"type": "integer", "minimum": 0},
+                "system_cpu_ns": {"type": "integer", "minimum": 0},
+                "records": {"type": "integer", "minimum": 0},
+                "alleles": {"type": "integer", "minimum": 0},
+                "samples": {"type": "integer", "minimum": 0},
+                "contigs": {"type": "integer", "minimum": 0},
+                "records_per_second": {"type": "number", "exclusiveMinimum": 0},
+                "input_bytes_per_second": {"type": "number", "exclusiveMinimum": 0},
+                "process_peak_rss_bytes": {"type": ["integer", "null"], "minimum": 1},
+                "temporary_peak_bytes": {"type": "integer", "minimum": 0},
+                "temporary_final_bytes": {"type": "integer", "minimum": 0},
+                "output_json_bytes": {"type": "integer", "minimum": 1},
+                "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

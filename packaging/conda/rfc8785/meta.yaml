@@ -1,0 +1,32 @@
+{% set version = "0.1.4" %}
+
+package:
+  name: rfc8785
+  version: {{ version }}
+
+source:
+  url: https://files.pythonhosted.org/packages/ef/2f/fa1d2e740c490191b572d33dbca5daa180cb423c24396b856f5886371d8b/rfc8785-{{ version }}.tar.gz
+  sha256: e545841329fe0eee4f6a3b44e7034343100c12b4ec566dc06ca9735681deb4da
+
+build:
+  noarch: python
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python >=3.8
+    - pip
+    - flit-core >=3.5,<4
+  run:
+    - python >=3.8
+
+test:
+  imports:
+    - rfc8785
+
+about:
+  home: https://pypi.org/project/rfc8785/
+  summary: RFC 8785 JSON Canonicalization Scheme implementation
+  license: Apache-2.0
+  license_file: LICENSE

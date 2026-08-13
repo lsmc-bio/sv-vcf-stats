@@ -1,0 +1,15 @@
+.git
+.github
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+build
+dist
+docs/plans
+test_data
+__pycache__
+*.egg-info
+src/vcf_sv_stats/_version.py
+*.pyc
+.coverage

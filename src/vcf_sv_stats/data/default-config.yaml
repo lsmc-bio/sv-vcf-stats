@@ -1,0 +1,18 @@
+schema_version: 1
+validation:
+  mode: standard
+io:
+  threads: 1
+  temp_dir: null
+  max_input_bytes: 100000000000
+  max_uncompressed_bytes: 500000000000
+reference:
+  cache_dir: null
+  offline: true
+normalization:
+  profile: conservative
+  target_vcf: "4.5"
+  index_format: auto
+report:
+  redaction: values
+  histogram_policy: vss-bins/1

@@ -1,0 +1,299 @@
+name: Distribution qualification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install-matrix:
+    name: ${{ matrix.target.id }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.target.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - id: linux-x86_64
+            runner: ubuntu-24.04
+          - id: linux-arm64
+            runner: ubuntu-24.04-arm
+          - id: macos-arm64
+            runner: macos-15
+          - id: macos-x86_64
+            runner: macos-15-intel
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+          enable-cache: true
+      - name: Build the exact wheel and source archive
+        run: |
+          uv sync --locked --all-extras --python "${{ matrix.python-version }}"
+          SOURCE_DATE_EPOCH=315532800 uv build
+          uv run python tools/normalize_sdist.py \
+            --sdist dist/*.tar.gz --epoch 315532800
+      - name: Prepare a complete local wheelhouse
+        run: |
+          uv venv --python "${{ matrix.python-version }}" --seed /tmp/downloader
+          /tmp/downloader/bin/python -m pip download \
+            --dest wheelhouse \
+            --requirement requirements.lock.txt \
+            setuptools==84.0.0 setuptools-scm==10.2.1 wheel
+          cp dist/*.whl wheelhouse/
+      - name: Rebuild the source archive without package-index access
+        env:
+          PIP_NO_INDEX: "1"
+          PIP_FIND_LINKS: ${{ github.workspace }}/wheelhouse
+          SOURCE_DATE_EPOCH: "315532800"
+        run: |
+          /tmp/downloader/bin/python -m pip wheel \
+            --no-index --find-links wheelhouse \
+            --no-deps \
+            --wheel-dir sdist-wheel dist/*.tar.gz
+          cmp "$(find dist -maxdepth 1 -name '*.whl' -print -quit)" \
+            "$(find sdist-wheel -maxdepth 1 -name '*.whl' -print -quit)"
+      - name: Install and verify both candidate channels without an index
+        env:
+          PIP_NO_INDEX: "1"
+          PIP_FIND_LINKS: ${{ github.workspace }}/wheelhouse
+        run: |
+          mkdir receipts
+          uv venv --python "${{ matrix.python-version }}" --seed /tmp/wheel-install
+          /tmp/wheel-install/bin/python -m pip install \
+            --no-index --find-links wheelhouse dist/*.whl
+          /tmp/wheel-install/bin/vcf-sv-stats-verify-install \
+            --output "receipts/${{ matrix.target.id }}.py${{ matrix.python-version }}.wheel.json"
+          uv venv --python "${{ matrix.python-version }}" --seed /tmp/sdist-install
+          /tmp/sdist-install/bin/python -m pip install \
+            --no-index --find-links wheelhouse sdist-wheel/*.whl
+          /tmp/sdist-install/bin/vcf-sv-stats-verify-install \
+            --output "receipts/${{ matrix.target.id }}.py${{ matrix.python-version }}.sdist.json"
+      - name: Scan candidate archives and receipts
+        run: |
+          uv run python tools/scan_tokens.py \
+            --root dist --policy policy/forbidden-token-hashes.json
+          uv run python tools/scan_tokens.py \
+            --root receipts --policy policy/neutrality-token-hashes.json --structural
+      - uses: actions/upload-artifact@v4
+        with:
+          name: install-${{ matrix.target.id }}-py${{ matrix.python-version }}
+          path: receipts/
+
+  aggregate-install-matrix:
+    name: Aggregate 24 installed-distribution receipts
+    needs: install-matrix
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - run: uv sync --locked --all-extras --python 3.11
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: install-*
+          path: /tmp/install-receipts
+          merge-multiple: true
+      - run: >-
+          uv run python tools/aggregate_distribution_receipts.py
+          --input-dir /tmp/install-receipts
+          --targets packaging/supported-targets.json
+          --output distribution-qualification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distribution-qualification
+          path: distribution-qualification.json
+
+  bioconda:
+    name: Bioconda recipe and installed package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: recipe-build
+          cache-environment: true
+          create-args: >-
+            python=3.11
+            conda-build
+            setuptools-scm=10.2.1
+            -c conda-forge
+      - name: Build supporting public packages and the tool recipe
+        shell: bash -el {0}
+        run: |
+          candidate_version=$(python -m setuptools_scm)
+          export SETUPTOOLS_SCM_PRETEND_VERSION="$candidate_version"
+          conda build packaging/conda/rfc8785 \
+            --output-folder /tmp/local-channel -c conda-forge --no-anaconda-upload
+          conda build packaging/conda/cli-core-yo \
+            --output-folder /tmp/local-channel -c conda-forge --no-anaconda-upload
+          conda build packaging/bioconda \
+            --output-folder /tmp/local-channel \
+            -c "file:///tmp/local-channel" -c conda-forge -c bioconda \
+            --no-anaconda-upload
+          conda create --yes --offline --prefix /tmp/recipe-install \
+            -c "file:///tmp/local-channel" "vcf-sv-stats=$candidate_version"
+          /tmp/recipe-install/bin/vcf-sv-stats-verify-install \
+            --output /tmp/bioconda-install.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bioconda-qualification
+          path: /tmp/bioconda-install.json
+
+  oci:
+    name: Multi-architecture OCI, SBOM, and provenance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: anchore/sbom-action/download-syft@v0.24.0
+      - uses: sigstore/cosign-installer@v4.1.2
+      - name: Build and audit the exact multi-architecture candidate
+        run: |
+          uv sync --locked --all-extras --python 3.11
+          candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          mkdir release release/container-attestations
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
+            --build-arg "SOURCE_COMMIT=$GITHUB_SHA" \
+            --output type=oci,dest=/tmp/vcf-sv-stats.oci.tar \
+            --attest=type=provenance,mode=max --attest=type=sbom .
+          uv run python tools/audit_oci.py \
+            --archive /tmp/vcf-sv-stats.oci.tar \
+            --output release/oci-audit.json \
+            --attestation-dir release/container-attestations
+      - name: Run each architecture without network or writable root
+        run: |
+          candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          mkdir -p /tmp/product-owned
+          for architecture in amd64 arm64; do
+            docker buildx build --platform "linux/$architecture" --load \
+              --tag "vcf-sv-stats:$architecture" \
+              --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
+              --build-arg "SOURCE_COMMIT=$GITHUB_SHA" .
+            syft "vcf-sv-stats:$architecture" \
+              -o "cyclonedx-json=release/linux-$architecture.container.cyclonedx.json"
+            test "$(docker image inspect "vcf-sv-stats:$architecture" --format '{{.Config.User}}')" = app
+            test "$(docker image inspect "vcf-sv-stats:$architecture" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" = "$candidate_version"
+            docker run --rm --platform "linux/$architecture" \
+              --network none --read-only \
+              --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+              --entrypoint vcf-sv-stats-verify-install \
+              "vcf-sv-stats:$architecture" \
+              --output "/tmp/$architecture.install.json"
+            mkdir -p "/tmp/product-owned/$architecture/bin"
+            container_id=$(docker create --platform "linux/$architecture" \
+              "vcf-sv-stats:$architecture")
+            docker cp \
+              "$container_id:/usr/local/lib/python3.11/dist-packages/vcf_sv_stats" \
+              "/tmp/product-owned/$architecture/vcf_sv_stats"
+            docker cp "$container_id:/usr/local/bin/vcf-sv-stats" \
+              "/tmp/product-owned/$architecture/bin/vcf-sv-stats"
+            docker cp "$container_id:/usr/local/bin/vcf-sv-stats-verify-install" \
+              "/tmp/product-owned/$architecture/bin/vcf-sv-stats-verify-install"
+            docker inspect "vcf-sv-stats:$architecture" \
+              > "/tmp/product-owned/$architecture/image-config.json"
+            docker rm "$container_id"
+          done
+      - name: Build aggregate SBOM, checksums, and signed candidate provenance
+        env:
+          SOURCE_DATE_EPOCH: "315532800"
+        run: |
+          uv build
+          uv run python tools/normalize_sdist.py \
+            --sdist dist/*.tar.gz --epoch "$SOURCE_DATE_EPOCH"
+          uv run python -m tools.build_release_evidence \
+            --wheel dist/*.whl --sdist dist/*.tar.gz \
+            --oci-archive /tmp/vcf-sv-stats.oci.tar \
+            --oci-audit release/oci-audit.json \
+            --output-dir release --source-commit "$GITHUB_SHA" \
+            --created 1980-01-01T00:00:00Z \
+            --invocation-id "github-actions-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          export COSIGN_PASSWORD="$(openssl rand -hex 32)"
+          cosign generate-key-pair --output-key-prefix /tmp/candidate
+          cosign sign-blob --yes --key /tmp/candidate.key \
+            --bundle release/candidate.provenance.sigstore.json \
+            release/candidate.provenance.intoto.json
+          cosign verify-blob --key /tmp/candidate.pub \
+            --bundle release/candidate.provenance.sigstore.json \
+            release/candidate.provenance.intoto.json
+          cp /tmp/candidate.pub release/candidate.cosign.pub
+      - name: Scan the OCI archive and every evidence artifact
+        run: |
+          mkdir /tmp/oci-archive-scan /tmp/release-neutrality-scan
+          cp /tmp/vcf-sv-stats.oci.tar /tmp/oci-archive-scan/candidate.oci.tar
+          cp release/candidate.* release/oci-audit.json \
+            /tmp/release-neutrality-scan/
+          uv run python tools/scan_tokens.py \
+            --root /tmp/oci-archive-scan \
+            --policy policy/forbidden-token-hashes.json
+          uv run python tools/scan_tokens.py \
+            --root release --policy policy/forbidden-token-hashes.json
+          uv run python tools/scan_tokens.py \
+            --root /tmp/product-owned \
+            --policy policy/neutrality-token-hashes.json --structural
+          uv run python tools/scan_tokens.py \
+            --root /tmp/release-neutrality-scan \
+            --policy policy/neutrality-token-hashes.json --structural
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-evidence
+          path: |
+            dist/
+            release/
+
+  apptainer:
+    name: Apptainer read-only and non-root smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.16"
+      - name: Install the digest-pinned public Apptainer release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.5.3 --repo apptainer/apptainer \
+            --pattern apptainer_1.5.3_amd64.deb --dir /tmp
+          echo '82b0bdddf459087d202383360b8318d526ad6826c748a2f669913cc6aef9ee40  /tmp/apptainer_1.5.3_amd64.deb' \
+            | sha256sum --check
+          sudo apt-get update
+          sudo apt-get install --yes /tmp/apptainer_1.5.3_amd64.deb
+          apptainer --version | grep -F 'apptainer version 1.5.3'
+      - name: Convert and exercise the exact candidate
+        run: |
+          uv sync --locked --all-extras --python 3.11
+          candidate_version=$(uv run python -c 'from importlib.metadata import version; print(version("vcf-sv-stats"))')
+          docker build --tag vcf-sv-stats:apptainer \
+            --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$candidate_version" \
+            --build-arg "SOURCE_COMMIT=$GITHUB_SHA" .
+          apptainer build /tmp/vcf-sv-stats.sif docker-daemon://vcf-sv-stats:apptainer
+          test "$(apptainer exec --containall --no-home /tmp/vcf-sv-stats.sif id -u)" != 0
+          apptainer exec --containall --no-home --writable-tmpfs \
+            /tmp/vcf-sv-stats.sif vcf-sv-stats-verify-install \
+            --output /tmp/apptainer-install.json
+          sha256sum /tmp/vcf-sv-stats.sif > /tmp/apptainer.checksum.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apptainer-qualification
+          path: |
+            /tmp/apptainer-install.json
+            /tmp/apptainer.checksum.txt

@@ -1,0 +1,343 @@
+{
+  "callset": {
+    "allele_count": 55,
+    "record_count": 55,
+    "single_sample": true,
+    "vcf_sample_ids": [
+      "HG002"
+    ]
+  },
+  "detection": {
+    "adapter_id": "urn:vcf-sv-stats:adapter:sniffles2:1",
+    "evidence": [
+      {
+        "key": "header_signature",
+        "value": "source=sniffles2_2.8.0",
+        "weight": 0.95
+      },
+      {
+        "key": "header_signature",
+        "value": "source=sniffles2",
+        "weight": 0.8
+      },
+      {
+        "key": "producer_version",
+        "value": "2.8.0",
+        "weight": 0.05
+      }
+    ],
+    "producer": "Sniffles2",
+    "score": 1.0,
+    "status": "supported",
+    "version": "2.8.0"
+  },
+  "diagnostic_codes": [
+    "VSS-BND-RELATIONSHIP-UNDECLARED"
+  ],
+  "fixture": "sniffles2.native.hg002.subset.vcf.gz",
+  "statistics": {
+    "alleles": {
+      "total": 55,
+      "types": {
+        "BND": 2,
+        "DEL": 16,
+        "DUP": 1,
+        "INS": 35,
+        "INV": 1
+      }
+    },
+    "breakends": {
+      "reciprocal_pairs": 0,
+      "total": 2,
+      "unresolved_mate_references": 0,
+      "without_declared_mate": 2
+    },
+    "copy_number": {
+      "missing": 55
+    },
+    "copy_number_interpretation": {
+      "baseline_status": "unavailable",
+      "cnv_records_by_genotype_state": {},
+      "gain_loss_neutral_inference": "not_performed",
+      "reason": "no_explicit_baseline_context"
+    },
+    "copy_number_quality": {
+      "boundaries": [
+        [
+          0,
+          10
+        ],
+        [
+          10,
+          20
+        ],
+        [
+          20,
+          30
+        ],
+        [
+          30,
+          50
+        ],
+        [
+          50,
+          100
+        ],
+        [
+          100,
+          200
+        ],
+        [
+          200,
+          500
+        ],
+        [
+          500,
+          1000
+        ],
+        [
+          1000,
+          null
+        ]
+      ],
+      "counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "invalid": 0,
+      "maximum": null,
+      "minimum": null,
+      "missing": 55,
+      "n": 0
+    },
+    "events": {
+      "resolved": 53
+    },
+    "filters": {
+      "GT": 1,
+      "PASS": 54,
+      "filtered_any": 1
+    },
+    "genotypes": {
+      "heterozygous_or_other_alt": 36,
+      "homozygous_alt": 19,
+      "ploidy:2": 55,
+      "unphased": 55
+    },
+    "histogram_policy": "vss-bins/1",
+    "length_bp": {
+      "boundaries": [
+        [
+          0,
+          50
+        ],
+        [
+          50,
+          100
+        ],
+        [
+          100,
+          500
+        ],
+        [
+          500,
+          1000
+        ],
+        [
+          1000,
+          5000
+        ],
+        [
+          5000,
+          10000
+        ],
+        [
+          10000,
+          50000
+        ],
+        [
+          50000,
+          100000
+        ],
+        [
+          100000,
+          1000000
+        ],
+        [
+          1000000,
+          10000000
+        ],
+        [
+          10000000,
+          null
+        ]
+      ],
+      "counts": [
+        0,
+        17,
+        26,
+        6,
+        3,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "invalid": 0,
+      "maximum": 7843,
+      "minimum": 52,
+      "missing": 0,
+      "n": 53,
+      "not_applicable": 2,
+      "policy_id": "vss-bins/1"
+    },
+    "merged_support": {
+      "declared_fields": [],
+      "interpretation": "merger_provenance_only",
+      "records_with_support": 0,
+      "records_without_support": 0,
+      "source_count_states": {},
+      "status": "not_declared",
+      "supporting_sources": {},
+      "vector_count_consistency": {}
+    },
+    "metric_contracts": {
+      "alleles": {
+        "comparability": "canonical-observation/1",
+        "denominator": "all_parsed_alternate_alleles",
+        "scope": "alternate_allele",
+        "unit": "alleles"
+      },
+      "breakends": {
+        "comparability": "event-resolution/1",
+        "denominator": "all_bracket_and_single_breakend_alleles",
+        "scope": "breakend_observation",
+        "unit": "breakends"
+      },
+      "copy_number": {
+        "comparability": "declared-cn/1",
+        "denominator": "all_parsed_sample_calls",
+        "scope": "vcf_sample_call",
+        "unit": "declared_copy_number"
+      },
+      "events": {
+        "comparability": "event-resolution/1",
+        "denominator": "simple_events_and_resolvable_relationship_groups",
+        "scope": "resolved_event",
+        "unit": "events"
+      },
+      "filters": {
+        "comparability": "vcf-filter-state/1",
+        "denominator": "all_parsed_source_records",
+        "scope": "source_record",
+        "unit": "records"
+      },
+      "genotypes": {
+        "comparability": "vcf-genotype-state/1",
+        "denominator": "all_parsed_sample_calls",
+        "scope": "vcf_sample_call",
+        "unit": "sample_calls"
+      },
+      "length_bp": {
+        "comparability": "vss-bins/1",
+        "denominator": "alleles_with_applicable_length",
+        "scope": "alternate_allele",
+        "unit": "base_pairs"
+      },
+      "merged_support": {
+        "comparability": "merger-support-provenance/1",
+        "denominator": "records_with_declared_merger_support",
+        "scope": "source_record",
+        "unit": "records"
+      },
+      "qual": {
+        "comparability": "declared-qual/1",
+        "denominator": "all_parsed_source_records",
+        "scope": "source_record",
+        "unit": "vcf_qual"
+      },
+      "source_records": {
+        "comparability": "canonical-observation/1",
+        "denominator": "all_parsed_source_records",
+        "scope": "source_record",
+        "unit": "records"
+      }
+    },
+    "qual": {
+      "boundaries": [
+        [
+          0,
+          10
+        ],
+        [
+          10,
+          20
+        ],
+        [
+          20,
+          30
+        ],
+        [
+          30,
+          50
+        ],
+        [
+          50,
+          100
+        ],
+        [
+          100,
+          200
+        ],
+        [
+          200,
+          500
+        ],
+        [
+          500,
+          1000
+        ],
+        [
+          1000,
+          null
+        ]
+      ],
+      "counts": [
+        0,
+        0,
+        0,
+        2,
+        53,
+        0,
+        0,
+        0,
+        0
+      ],
+      "invalid": 0,
+      "maximum": 60.0,
+      "minimum": 47.0,
+      "missing": 0,
+      "n": 55
+    },
+    "representations": {
+      "breakend": 2,
+      "sequence": 51,
+      "symbolic": 2
+    },
+    "source_records": {
+      "missing_qual_records": 0,
+      "multiallelic_records": 0,
+      "non_sv_records": 0,
+      "total": 55
+    }
+  }
+}

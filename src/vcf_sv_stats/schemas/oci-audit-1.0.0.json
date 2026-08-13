@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:oci-audit:1.0.0",
+  "title": "vcf-sv-stats OCI audit receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "archive_name", "archive_bytes", "archive_sha256", "root_digest", "platforms", "checks", "receipt_sha256"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.oci-audit"},
+    "schema_version": {"const": "1.0.0"},
+    "archive_name": {"type": "string", "minLength": 1, "pattern": "^[^/\\\\]+$"},
+    "archive_bytes": {"type": "integer", "minimum": 1},
+    "archive_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "root_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "platforms": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["platform", "manifest_digest", "config_digest", "user", "working_directory", "entrypoint", "layer_count", "reference_like_paths", "attestation_predicate_types", "attestation_statement_sha256"],
+        "properties": {
+          "platform": {"enum": ["linux/amd64", "linux/arm64"]},
+          "manifest_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "config_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "user": {"type": "string", "minLength": 1, "not": {"enum": ["0", "root"]}},
+          "working_directory": {"const": "/work"},
+          "entrypoint": {"const": ["vcf-sv-stats"]},
+          "layer_count": {"type": "integer", "minimum": 1},
+          "reference_like_paths": {"type": "array", "maxItems": 0, "items": {"type": "string"}},
+          "attestation_predicate_types": {
+            "type": "array",
+            "minItems": 2,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "attestation_statement_sha256": {
+            "type": "array",
+            "minItems": 2,
+            "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact_platforms", "non_root", "fixed_entrypoint", "reference_absent", "spdx_attestation_per_platform", "provenance_attestation_per_platform"],
+      "properties": {
+        "exact_platforms": {"const": true},
+        "non_root": {"const": true},
+        "fixed_entrypoint": {"const": true},
+        "reference_absent": {"const": true},
+        "spdx_attestation_per_platform": {"const": true},
+        "provenance_attestation_per_platform": {"const": true}
+      }
+    },
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

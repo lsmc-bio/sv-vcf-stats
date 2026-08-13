@@ -1,0 +1,26 @@
+{
+  "schema_name": "vcf-sv-stats.source-manifest",
+  "schema_version": "1.0.0",
+  "combined_sha256": "657b7c7162071833634c324ad33e3e5e9cd984e84e0c7f73291f85d0e715251c",
+  "sources": [
+    {
+      "producer_label": "manta",
+      "path": "../vcf/manta.native.hg002.subset.vcf.gz",
+      "display_name": "manta.native.hg002.subset.vcf.gz",
+      "sha256": "67bbb20e722e6278dee87fd45571640b333def9d97e99a36afcf9e5da323bccc",
+      "artifact_role": "caller_native",
+      "adapter_id": "urn:vcf-sv-stats:adapter:manta:1",
+      "record_namespace": "manta-native-hg002",
+      "index": {
+        "path": "../vcf/manta.native.hg002.subset.vcf.gz.tbi",
+        "display_name": "manta.native.hg002.subset.vcf.gz.tbi",
+        "sha256": "d622877a7cf7e88d7a1398a7545b0fdd29ca05fe07227e0cf093bec6f730cf2f"
+      },
+      "merger_provenance": {
+        "support_ordinal": 0,
+        "source_id_fields": ["IDLIST"],
+        "relationship_fields": ["MATEID", "EVENT"]
+      }
+    }
+  ]
+}

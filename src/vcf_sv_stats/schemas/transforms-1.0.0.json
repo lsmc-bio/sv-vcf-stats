@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vcf-sv-stats:schema:transforms:1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_name", "schema_version", "request_sha256", "adapter", "cardinality", "input", "output", "index", "normalization", "reference", "schemas", "record_mappings"],
+  "properties": {
+    "schema_name": {"const": "vcf-sv-stats.transforms"},
+    "schema_version": {"const": "1.0.0"},
+    "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "adapter": {"type": "object"},
+    "cardinality": {"type": "object"},
+    "input": {"type": "object"},
+    "output": {"type": "object"},
+    "index": {"type": "object"},
+    "normalization": {"type": "object"},
+    "source_comparison": {"type": ["object", "null"]},
+    "reference": {"type": "object"},
+    "schemas": {"type": "object"},
+    "record_mappings": {"type": "array", "items": {"type": "object"}}
+  }
+}
