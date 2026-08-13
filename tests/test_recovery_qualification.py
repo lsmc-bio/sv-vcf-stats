@@ -18,7 +18,11 @@ def test_signal_resource_and_crash_qualification(tmp_path: Path) -> None:
         source,
         tmp_path / "qualification.manifest.json",
         class_id="recovery",
-        records=100_000,
+        # Keep this aligned with the checked-in qualification receipt.  A
+        # smaller input can legitimately finish before the requested signal
+        # reaches the child on fast hosts, which tests scheduling rather than
+        # recovery behavior.
+        records=1_000_000,
         samples=1,
         contigs=4,
         contig_length=1_000_000,

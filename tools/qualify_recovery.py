@@ -42,6 +42,8 @@ def _wait_until_interruptible(process: subprocess.Popen[bytes], seconds: float) 
         if process.poll() is not None:
             raise UsageError("qualification input completed before interruption")
         time.sleep(min(0.01, max(0.0, deadline - time.monotonic())))
+    if process.poll() is not None:
+        raise UsageError("qualification input completed before interruption")
 
 
 def _run_scenario(input_path: Path, scenario: str, *, settle_seconds: float) -> dict[str, Any]:
