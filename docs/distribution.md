@@ -101,6 +101,10 @@ metadata and the artifact digest in its public transparency log; it does not
 publish artifact contents. A private candidate release must leave the input
 false unless public signing metadata is separately approved.
 
+The OIDC permission exists only on that job-level-gated signing job. Pull
+requests and ordinary qualification jobs receive no identity-token permission,
+so code under review cannot bypass the public-write gate.
+
 The Sigstore bundle necessarily contains the administrative repository and
 workflow identity. That identity is the sole hosting exception to product
 neutrality and is verified separately from product-owned content.

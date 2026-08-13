@@ -30,6 +30,13 @@ from the matching sanitized VCF for semantic parity testing.
 Review date: 2026-08-13. The exact per-artifact manifest disposition is
 `reviewed-public-release-candidate-2026-08-13`.
 
+The machine gate is `test_data/redistribution-review.json`. It stores an RFC
+8785 digest of the complete manifest after removing only the disposition fields.
+That binds the reviewed status to source identity evidence, source and fixture
+digests, indexes, record counts, behavior classes, derivations, and corpus
+totals. Both fixture verification and release-evidence generation recompute the
+digest and fail on any mismatch.
+
 The review applied these tests independently to all 21 source-derived fixtures
 and both parity artifacts:
 
@@ -88,7 +95,8 @@ Regeneration procedure:
 stage_root=$(mktemp -d)
 uv run python tools/build_test_data.py \
   --source-dir /explicit/source/directory \
-  --output-dir "$stage_root/test_data"
+  --output-dir "$stage_root/test_data" \
+  --redistribution-review test_data/redistribution-review.json
 uv run python tools/verify_test_data.py \
   --test-data-dir "$stage_root/test_data"
 uv run python tools/scan_tokens.py \
@@ -100,4 +108,9 @@ uv run python tools/scan_tokens.py \
 ```
 
 Review the staged manifest and independent validator output before replacing the
-committed tree. Raw and intermediate VCFs must never be staged in Git.
+committed tree. The builder has no default review policy and emits
+`pending-redistribution-review` when the option is omitted. Supplying the policy
+promotes the manifest only when every review-bound field is byte-for-byte
+equivalent after canonicalization; a changed source or generated artifact fails
+instead of inheriting the old date. Raw and intermediate VCFs must never be
+staged in Git.

@@ -11,10 +11,10 @@ from typing import Any, cast
 
 import pysam
 
+from vcf_sv_stats.fixture_review import load_review, verify_review
 from vcf_sv_stats.serialization import file_sha256
 
 SUBJECT = "HG002"
-REDISTRIBUTION_STATUS = "reviewed-public-release-candidate-2026-08-13"
 SUBJECT_TOKEN = re.compile(r"(?i)\b(?:HG\d{3}|NA\d{5}|GM\d{5})\b")
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
@@ -46,6 +46,8 @@ def verify(root: Path) -> dict[str, int]:
     )
     if manifest.get("subject") != SUBJECT:
         raise ValueError("Fixture manifest subject is not HG002")
+    review = load_review(root / "redistribution-review.json")
+    redistribution_status = verify_review(manifest, review)
     source_evidence = manifest.get("source_identity_evidence")
     if not isinstance(source_evidence, list) or len(source_evidence) != 22:
         raise ValueError("Fixture manifest must contain all 22 source identity inspections")
@@ -70,7 +72,7 @@ def verify(root: Path) -> dict[str, int]:
             raise ValueError(f"Fixture manifest subject mismatch: {entry['fixture_id']}")
         if entry.get("source_sha256") not in evidence_digests:
             raise ValueError(f"Fixture source lacks HG002 identity evidence: {entry['fixture_id']}")
-        if entry.get("redistribution_status") != REDISTRIBUTION_STATUS:
+        if entry.get("redistribution_status") != redistribution_status:
             raise ValueError(f"Fixture redistribution review is incomplete: {entry['fixture_id']}")
         if entry.get("oversized_relationship_exclusions"):
             fixture_id = entry["fixture_id"]
@@ -96,7 +98,7 @@ def verify(root: Path) -> dict[str, int]:
     for derived in manifest.get("derived_parity_artifacts", []):
         if derived.get("subject") != SUBJECT:
             raise ValueError(f"Derived fixture subject mismatch: {derived['fixture_path']}")
-        if derived.get("redistribution_status") != REDISTRIBUTION_STATUS:
+        if derived.get("redistribution_status") != redistribution_status:
             fixture_path = derived["fixture_path"]
             raise ValueError(f"Derived fixture redistribution review is incomplete: {fixture_path}")
         path = root / derived["fixture_path"]
@@ -115,8 +117,7 @@ def verify(root: Path) -> dict[str, int]:
     actual_variant_paths = {
         path
         for path in (root / "vcf").iterdir()
-        if path.is_file()
-        and (path.name.endswith(".vcf.gz") or path.suffix in {".vcf", ".bcf"})
+        if path.is_file() and (path.name.endswith(".vcf.gz") or path.suffix in {".vcf", ".bcf"})
     }
     if actual_variant_paths != expected_variant_paths:
         raise ValueError("Fixture manifest and variant files do not match exactly")

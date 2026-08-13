@@ -25,12 +25,12 @@ import pysam
 import pysam.bcftools
 
 from vcf_sv_stats.engine import stats
+from vcf_sv_stats.fixture_review import PENDING_REDISTRIBUTION_STATUS, apply_review, load_review
 from vcf_sv_stats.models import OperationRequest
 from vcf_sv_stats.serialization import file_sha256, json_bytes
 
 SUBJECT = "HG002"
 SANITIZATION_VERSION = "fixture-sanitizer/1"
-REDISTRIBUTION_STATUS = "reviewed-public-release-candidate-2026-08-13"
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
 MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
@@ -66,7 +66,6 @@ class SourceSpec:
     relative_path: str
     fixture_name: str
     source_signature: str
-    redistribution_status: str = REDISTRIBUTION_STATUS
 
 
 SOURCES: tuple[SourceSpec, ...] = (
@@ -590,7 +589,11 @@ def _plain_query_source(source_dir: Path) -> Path:
     return source_dir / "vcfs/truari/query.del-ins-ge50.in-truth-bed.vcf"
 
 
-def build(source_dir: Path, output_dir: Path) -> None:
+def build(
+    source_dir: Path,
+    output_dir: Path,
+    redistribution_review: Path | None = None,
+) -> None:
     if not source_dir.is_dir():
         raise ValueError(f"Source directory does not exist: {source_dir}")
     if output_dir.exists():
@@ -598,8 +601,6 @@ def build(source_dir: Path, output_dir: Path) -> None:
     for spec in SOURCES:
         if not (source_dir / spec.relative_path).is_file():
             raise ValueError(f"Required source VCF is missing: {spec.relative_path}")
-        if not spec.redistribution_status.startswith("reviewed-"):
-            raise ValueError(f"Redistribution review is incomplete: {spec.fixture_name}")
 
     stage = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.stage.", dir=output_dir.parent))
     try:
@@ -666,7 +667,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_path": str(compressed.relative_to(stage)),
                     "fixture_sha256": file_sha256(compressed),
                     "index_sha256": file_sha256(index),
-                    "redistribution_status": spec.redistribution_status,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 }
             )
 
@@ -704,7 +705,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": parity_record_count,
                     "derived_from": parity_source.name,
                     "subject": SUBJECT,
-                    "redistribution_status": REDISTRIBUTION_STATUS,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 },
                 {
                     "fixture_path": str(query_plain.relative_to(stage)),
@@ -712,7 +713,7 @@ def build(source_dir: Path, output_dir: Path) -> None:
                     "fixture_record_count": query_record_count,
                     "derived_from": "truvari.query.hg002.subset.vcf.gz",
                     "subject": SUBJECT,
-                    "redistribution_status": REDISTRIBUTION_STATUS,
+                    "redistribution_status": PENDING_REDISTRIBUTION_STATUS,
                 },
             ],
             "totals": {
@@ -722,6 +723,9 @@ def build(source_dir: Path, output_dir: Path) -> None:
                 ),
             },
         }
+        if redistribution_review is not None:
+            apply_review(manifest, load_review(redistribution_review))
+            shutil.copyfile(redistribution_review, stage / "redistribution-review.json")
         (stage / "manifest.json").write_bytes(json_bytes(manifest))
         (stage / "NOTICE.md").write_text(
             "# Fixture notice\n\n"
@@ -736,7 +740,8 @@ def build(source_dir: Path, output_dir: Path) -> None:
             "fixtures contain factual public-subject observations and factual\n"
             "producer/version attribution, not caller source code or binaries. Caller\n"
             "software remains subject to its own license. The fixture corpus was\n"
-            "re-reviewed for public-release-candidate use on 2026-08-13; publication\n"
+            "eligible for a reviewed disposition only when its exact manifest digest\n"
+            "matches an explicitly supplied redistribution-review policy; publication\n"
             "remains a separately approved gate.\n",
             encoding="utf-8",
         )
@@ -755,8 +760,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--redistribution-review", type=Path)
     args = parser.parse_args()
-    build(args.source_dir.resolve(strict=True), args.output_dir.resolve(strict=False))
+    review = (
+        args.redistribution_review.resolve(strict=True)
+        if args.redistribution_review is not None
+        else None
+    )
+    build(
+        args.source_dir.resolve(strict=True),
+        args.output_dir.resolve(strict=False),
+        review,
+    )
 
 
 if __name__ == "__main__":

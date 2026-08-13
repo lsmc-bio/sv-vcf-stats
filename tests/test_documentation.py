@@ -215,6 +215,9 @@ def test_current_documentation_uses_release_candidate_status() -> None:
 
 def test_fixture_governance_covers_every_reviewed_artifact() -> None:
     manifest = json.loads((ROOT / "test_data/manifest.json").read_text(encoding="utf-8"))
+    review = json.loads(
+        (ROOT / "test_data/redistribution-review.json").read_text(encoding="utf-8")
+    )
     governance = (ROOT / "docs/fixture-governance.md").read_text(encoding="utf-8")
     expected_status = "reviewed-public-release-candidate-2026-08-13"
     artifacts = [*manifest["fixtures"], *manifest["derived_parity_artifacts"]]
@@ -222,6 +225,8 @@ def test_fixture_governance_covers_every_reviewed_artifact() -> None:
     assert len(manifest["fixtures"]) == 21
     assert len(manifest["derived_parity_artifacts"]) == 2
     assert {artifact["redistribution_status"] for artifact in artifacts} == {expected_status}
+    assert review["redistribution_status"] == expected_status
+    assert "redistribution-review.json" in governance
     for artifact in manifest["fixtures"]:
         assert f"`{artifact['fixture_id']}`" in governance
     for artifact in manifest["derived_parity_artifacts"]:

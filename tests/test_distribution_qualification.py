@@ -46,21 +46,21 @@ def test_distribution_workflow_scans_loaded_platform_images() -> None:
 
 def test_distribution_workflow_uses_exact_keyless_identity_on_default_branch() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
+    oci = workflow.split("\n  oci:\n", 1)[1].split("\n  sigstore:\n", 1)[0]
+    sigstore = workflow.split("\n  sigstore:\n", 1)[1].split("\n  apptainer:\n", 1)[0]
 
-    assert "id-token: write" in workflow
+    assert "id-token: write" not in oci
+    assert "cosign" not in oci
+    assert sigstore.count("id-token: write") == 1
     assert "publish_sigstore_entry:" in workflow
     assert "default: false" in workflow
-    assert (
-        "if: github.event_name == 'workflow_dispatch' && inputs.publish_sigstore_entry"
-        in workflow
-    )
-    default_branch_guard = (
-        'test "$GITHUB_REF" = "refs/heads/${{ github.event.repository.default_branch }}"'
-    )
-    assert default_branch_guard in workflow
-    assert 'certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"' in workflow
-    assert "--certificate-identity \"$certificate_identity\"" in workflow
-    assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in sigstore
+    assert "inputs.publish_sigstore_entry" in sigstore
+    assert "github.ref_name == github.event.repository.default_branch" in sigstore
+    assert 'certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"' in sigstore
+    assert 'test "$certificate_identity" = "$expected_identity"' in sigstore
+    assert "--certificate-identity \"$certificate_identity\"" in sigstore
+    assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in sigstore
     assert "cosign generate-key-pair" not in workflow
     assert "COSIGN_PASSWORD" not in workflow
     assert "candidate.cosign.pub" not in workflow

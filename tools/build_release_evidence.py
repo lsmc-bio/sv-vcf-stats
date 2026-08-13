@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from tools.build_sbom import _wheel_version
 from vcf_sv_stats.exceptions import UsageError
+from vcf_sv_stats.fixture_review import load_review, verify_review
 from vcf_sv_stats.serialization import (
     file_sha256,
     write_bytes_atomic,
@@ -153,17 +154,20 @@ def build(
     inventory = _inventory(root / "packaging/runtime-licenses.json", root / "requirements.lock.txt")
     fixture_manifest = root / "test_data/manifest.json"
     fixture_value = cast(dict[str, Any], json.loads(fixture_manifest.read_text(encoding="utf-8")))
+    try:
+        verify_review(
+            fixture_value,
+            load_review(root / "test_data/redistribution-review.json"),
+        )
+    except ValueError as exc:
+        raise UsageError("fixture redistribution review does not bind this manifest") from exc
     fixture_subjects = sorted(
         {
             str(item["subject"])
             for item in [*fixture_value["fixtures"], *fixture_value["derived_parity_artifacts"]]
         }
     )
-    fixture_items = [*fixture_value["fixtures"], *fixture_value["derived_parity_artifacts"]]
-    fixture_statuses = sorted({str(item["redistribution_status"]) for item in fixture_items})
-    if fixture_subjects != ["HG002"] or fixture_statuses != [
-        "reviewed-public-release-candidate-2026-08-13"
-    ]:
+    if fixture_subjects != ["HG002"]:
         raise UsageError("fixture license evidence is not terminal and single-subject")
 
     artifacts = [
