@@ -1,4 +1,231 @@
 {
+  "auxiliary_artifacts": [
+    {
+      "artifact_role": "fixture_notice",
+      "path": "NOTICE.md",
+      "sha256": "3259e718c1dfa00d9dab29e194625edec21ca820fa26a051ac72e25409778bef"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.native.diagnostics.jsonl",
+      "sha256": "d1a6d77c20369f17261ebab1735435556635cafe81027d9f016bec9b4491628a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.native.expected.json",
+      "sha256": "c45b8b97771a6137a77f4c2ec5a5178fbf7b7fdf859fe2d9e2cd86f1a9e1e238"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.normalized.diagnostics.jsonl",
+      "sha256": "d1a6d77c20369f17261ebab1735435556635cafe81027d9f016bec9b4491628a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/dysgu.normalized.expected.json",
+      "sha256": "c6691beddc4d22f187ec6214f8b2c4581603344cb94dbc49d92aeeb8255e3cb0"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/jasmine.merged.diagnostics.jsonl",
+      "sha256": "0572247d7d9d78e25f514d78955e40afac964065d75f93643076edc4ca1a548a"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/jasmine.merged.expected.json",
+      "sha256": "4c07230e8bcf5c11be32d590d9a6b1908e156bc6549464a118011779fa7e26a2"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.native.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.native.expected.json",
+      "sha256": "c46ee3552bc2be4ae674f3844968fe179e3a32e522280a5a388810b0d6226f6d"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.normalized.diagnostics.jsonl",
+      "sha256": "85180ef1f374fb4b5d264d8982e0502873e97677d940ed46d7b4e70cedc04ce9"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/manta.normalized.expected.json",
+      "sha256": "75aa758786d8be3c9c55a2240f745efbb436452444f29b1e57fcdf6113b0cbfe"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/octopusv.merged.diagnostics.jsonl",
+      "sha256": "2dfd87ce5a8f3d4a940ade1e06ef14382ecd648eb6e8c78cb72d7fdc510d4947"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/octopusv.merged.expected.json",
+      "sha256": "08c5b1a413af4b8620929dd01442c202f31262430802f5e63c2fcc6097ef642e"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.cnvscope.diagnostics.jsonl",
+      "sha256": "6011759a1412644456def9ae1fc07347b89a8fcdc30e8343875dfa7520e9fb50"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.cnvscope.expected.json",
+      "sha256": "3d28a29eb5faadfdc2c164f9f74233aae653c9a122f8fea4a7b1e4026756fa47"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.native.diagnostics.jsonl",
+      "sha256": "e23590666ca13c8b20e38b7bdca7e92c3f1df0ba69d162c172f9124a562cd484"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.native.expected.json",
+      "sha256": "b6875258f6b9dfb8cdfaa69b2efce2ee75378d0fd47ee227d5df6b45606100d3"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.normalized.diagnostics.jsonl",
+      "sha256": "301c75b0d0969ccd1a83d190bfbd2a62ebc9d6b88dc44a4b8d34b8c87ca143ad"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sentieon.longreadsv.normalized.expected.json",
+      "sha256": "ff24422b13ff0f3bfbe5c8594852f635d6944ab4526ecc98ec7afd187a42c4fc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.native.diagnostics.jsonl",
+      "sha256": "072c81db17f4113102320610e172a6ed63d36f77f9a2528f5f8965f050b4e016"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.native.expected.json",
+      "sha256": "30d60b6aeb491077694ed7c3bc91c9537e3b8e14ca3563aae8e892b8cfac23b1"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.normalized.diagnostics.jsonl",
+      "sha256": "072c81db17f4113102320610e172a6ed63d36f77f9a2528f5f8965f050b4e016"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/sniffles2.normalized.expected.json",
+      "sha256": "59721b0fecbaf8f90c608daf113f3ba43a4532e94352e029cf714ad0415f2441"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/survivor.merged.diagnostics.jsonl",
+      "sha256": "2f99cdaedb5f731c335c17b059db4c2d7ca20309d2a2563e5b568cb22846a9e3"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/survivor.merged.expected.json",
+      "sha256": "83fc1b179e40aa3ec42af4481098c6b76da66382c68673abaac6ff52d225cadc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.native.diagnostics.jsonl",
+      "sha256": "453cdd6a599bc2e56ae647f8cb8b9d5f41d61ec7c78bdb1d99bc11a46ce43286"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.native.expected.json",
+      "sha256": "5e5be0f65ae3071e75d8b4f19d1b2144e1b8d0c6c65ce6cbe37519ea0a744a2f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.normalized.diagnostics.jsonl",
+      "sha256": "964b0bd5a1ffecc7f59a0eab11950db824621f328418055737ff952304928cc1"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.normalized.expected.json",
+      "sha256": "f146e3e53420a667e29be639c3cafdab187d2a5139cbadba131bc9e50550906f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.reference-repaired.diagnostics.jsonl",
+      "sha256": "fa68042460508fe054adfed05302c4e68134fd8296508a6bb56963dc07e5b00e"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/tiddit.reference-repaired.expected.json",
+      "sha256": "3f9cfe72a7c9c5f282db69856cccc3ae36314c7f84a77948ca742b33bf3f4aed"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv-manta.source-comparison.expected.json",
+      "sha256": "9580638aacc9fec13ba4ee676d6b2c8f61adc8a0be52f19b8a8bd6717a428d75"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv.merged.diagnostics.jsonl",
+      "sha256": "77c0a64c07ca97a6d200db17b916eb143eaefe5295cb3f2b07fecafc47c5cb27"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/trussv.merged.expected.json",
+      "sha256": "645bbd612529a6a76e02f027f19387b02fe0005e477da83e1d179dc76b3d739f"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fn.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fn.expected.json",
+      "sha256": "b9dcff9f6f745e53246aa19fb7beae6ec789d2dede3d1c1a7dd91eca61a889fc"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fp.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.fp.expected.json",
+      "sha256": "6a861ec370c69396bbd50602e926e97bb571653f05b7adea93607401b7034d78"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.query.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.query.expected.json",
+      "sha256": "663d1d765f65d0678e301598073348c97156133ae3f54f976627b14efb792d50"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-base.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-base.expected.json",
+      "sha256": "c182394c307bc9d047aa178df431ca4572f1c8cfe1d38c2ebd40d2b43e4737c7"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-comp.diagnostics.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "artifact_role": "expected_output",
+      "path": "expected/truvari.tp-comp.expected.json",
+      "sha256": "dc931fd31d0349cd8490bdc42832fe27738604183832fd336b5456739456d92b"
+    },
+    {
+      "artifact_role": "source_manifest",
+      "path": "source_manifests/trussv-manta.source-manifest.json",
+      "sha256": "f0eb75934d61ff30131f26f6f9406c2e1a12dcb1442840f587bf05ab669b9acf"
+    }
+  ],
   "derived_parity_artifacts": [
     {
       "derived_from": "manta.native.hg002.subset.vcf.gz",
@@ -6,16 +233,16 @@
       "fixture_record_count": 100,
       "fixture_sha256": "119f77cf4d82983769c07815f45a1bf93bf7f09ad461ed7b427e12bc915652b3",
       "index_sha256": "86142700e301327b8d09c41981a89516019e20695460466f091e883d4df97559",
-      "subject": "HG002",
-      "redistribution_status": "reviewed-public-release-candidate-2026-08-13"
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
+      "subject": "HG002"
     },
     {
       "derived_from": "truvari.query.hg002.subset.vcf.gz",
       "fixture_path": "vcf/truvari.query.hg002.subset.vcf",
       "fixture_record_count": 68,
       "fixture_sha256": "b0caf44433d0e17de36b8f02858319854aa886060eceb255d1eed5cc43a47eed",
-      "subject": "HG002",
-      "redistribution_status": "reviewed-public-release-candidate-2026-08-13"
+      "redistribution_status": "reviewed-public-release-candidate-2026-08-13",
+      "subject": "HG002"
     }
   ],
   "fixtures": [

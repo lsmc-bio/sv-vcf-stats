@@ -19,6 +19,7 @@ SUBJECT_TOKEN = re.compile(r"(?i)\b(?:HG\d{3}|NA\d{5}|GM\d{5})\b")
 MAX_CLOSURE_RECORDS = 128
 MAX_CORPUS_RECORDS = 2_500
 MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
+AUXILIARY_ROLES = {"expected_output", "fixture_notice", "source_manifest"}
 
 
 def _unexpected_subjects(text: str) -> set[str]:
@@ -71,6 +72,9 @@ def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
     records = 0
     compressed_bytes = 0
     expected_variant_paths: set[Path] = set()
+    expected_paths = {root / "manifest.json"}
+    if review_path.is_file():
+        expected_paths.add(review_path)
     source_fixture_counts: dict[str, int] = {}
     for entry in manifest["fixtures"]:
         if entry.get("subject") != SUBJECT:
@@ -84,6 +88,7 @@ def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
             raise ValueError(f"Fixture has an oversized relationship exclusion: {fixture_id}")
         path = root / entry["fixture_path"]
         expected_variant_paths.add(path)
+        expected_paths.update((path, Path(str(path) + ".tbi")))
         if file_sha256(path) != entry["fixture_sha256"]:
             raise ValueError(f"Fixture digest mismatch: {path.name}")
         index = Path(str(path) + ".tbi")
@@ -108,6 +113,7 @@ def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
             raise ValueError(f"Derived fixture redistribution review is incomplete: {fixture_path}")
         path = root / derived["fixture_path"]
         expected_variant_paths.add(path)
+        expected_paths.add(path)
         if file_sha256(path) != derived.get("fixture_sha256"):
             raise ValueError(f"Derived fixture digest mismatch: {path.name}")
         observed = _inspect_variant(path)
@@ -117,8 +123,38 @@ def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
             raise ValueError(f"Derived fixture is not record-parallel: {path.name}")
         if "index_sha256" in derived:
             index = Path(str(path) + ".csi")
+            expected_paths.add(index)
             if not index.is_file() or file_sha256(index) != derived["index_sha256"]:
                 raise ValueError(f"Derived fixture index mismatch: {path.name}")
+    auxiliary = manifest.get("auxiliary_artifacts")
+    if not isinstance(auxiliary, list) or not auxiliary:
+        raise ValueError("Fixture manifest auxiliary artifacts are missing")
+    auxiliary_paths: set[Path] = set()
+    for entry in auxiliary:
+        if not isinstance(entry, dict) or set(entry) != {"artifact_role", "path", "sha256"}:
+            raise ValueError("Fixture manifest auxiliary artifact is malformed")
+        if entry["artifact_role"] not in AUXILIARY_ROLES:
+            raise ValueError("Fixture manifest auxiliary artifact role is invalid")
+        path_value = entry["path"]
+        if not isinstance(path_value, str):
+            raise ValueError("Fixture manifest auxiliary artifact path is invalid")
+        relative = Path(path_value)
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or relative.as_posix() != path_value
+        ):
+            raise ValueError("Fixture manifest auxiliary artifact path is unsafe")
+        path = root / relative
+        if path in auxiliary_paths:
+            raise ValueError("Fixture manifest auxiliary artifact path is duplicated")
+        auxiliary_paths.add(path)
+        expected_paths.add(path)
+        digest = entry["sha256"]
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise ValueError("Fixture manifest auxiliary artifact digest is invalid")
+        if path.is_symlink() or not path.is_file() or file_sha256(path) != digest:
+            raise ValueError(f"Fixture auxiliary artifact mismatch: {path.name}")
     actual_variant_paths = {
         path
         for path in (root / "vcf").iterdir()
@@ -126,6 +162,9 @@ def verify(root: Path, *, require_review: bool = True) -> dict[str, int]:
     }
     if actual_variant_paths != expected_variant_paths:
         raise ValueError("Fixture manifest and variant files do not match exactly")
+    actual_paths = {path for path in root.rglob("*") if path.is_file()}
+    if actual_paths != expected_paths:
+        raise ValueError("Fixture manifest and bundled files do not match exactly")
     totals = manifest.get("totals", {})
     if records != totals.get("source_derived_records") or records > MAX_CORPUS_RECORDS:
         raise ValueError("Fixture corpus record total is invalid")

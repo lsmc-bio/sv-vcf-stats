@@ -39,6 +39,11 @@ def test_committed_review_binds_every_manifest_field_except_disposition() -> Non
     with pytest.raises(ValueError, match="reviewed digest set"):
         verify_review(tampered, review)
 
+    changed_golden = copy.deepcopy(manifest)
+    changed_golden["auxiliary_artifacts"][0]["sha256"] = "f" * 64
+    with pytest.raises(ValueError, match="reviewed digest set"):
+        verify_review(changed_golden, review)
+
 
 def test_review_can_only_promote_an_exact_pending_manifest() -> None:
     manifest = _manifest()
@@ -76,3 +81,20 @@ def test_pending_fixture_integrity_mode_is_explicit_and_release_gate_stays_stric
     with pytest.raises(ValueError, match="review policy is missing"):
         verify(staged)
     assert verify(staged, require_review=False) == {"fixtures": 21, "records": 1186}
+
+
+def test_fixture_verifier_rejects_changed_or_unmanifested_expected_output(
+    tmp_path: Path,
+) -> None:
+    staged = tmp_path / "test_data"
+    shutil.copytree(ROOT / "test_data", staged)
+    golden = staged / "expected/manta.native.expected.json"
+    golden.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="auxiliary artifact mismatch"):
+        verify(staged)
+
+    shutil.rmtree(staged)
+    shutil.copytree(ROOT / "test_data", staged)
+    (staged / "expected/unmanifested.expected.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="bundled files do not match exactly"):
+        verify(staged)

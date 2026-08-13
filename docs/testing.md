@@ -59,7 +59,10 @@ The verifier independently checks:
 - exactly one sample column named `HG002` in every VCF and BCF;
 - absence of other common reference-subject token patterns;
 - source-digest links to the inspected single-HG002 corpus;
-- the exact-digest redistribution-review policy and status for every fixture;
+- hashes and a closed file set for every expected output, source manifest, and
+  fixture notice;
+- the exact-digest redistribution-review policy and status for every fixture
+  and bundled auxiliary artifact;
 - plain/compressed and VCF/BCF parity artifacts.
 
 `tests/test_fixtures.py` then runs the application over every role and compares

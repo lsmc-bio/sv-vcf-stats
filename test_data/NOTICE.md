@@ -5,6 +5,7 @@ These deterministic, heavily subsampled fixtures contain public HG002 Genome in 
 Each manifest entry records the fixture-level redistribution decision. The
 fixtures contain factual public-subject observations and factual
 producer/version attribution, not caller source code or binaries. Caller
-software remains subject to its own license. The fixture corpus was re-reviewed
-for public-release-candidate use on 2026-08-13; publication remains a separately
-approved gate.
+software remains subject to its own license. The fixture corpus was
+eligible for a reviewed disposition only when its exact manifest digest
+matches an explicitly supplied redistribution-review policy; publication
+remains a separately approved gate.
