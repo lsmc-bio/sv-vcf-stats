@@ -75,7 +75,7 @@ jobs:
           uv run python tools/scan_tokens.py --root .
           --policy policy/neutrality-token-hashes.json --structural
           --source-github-repository lsmc-bio/sv-vcf-stats
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: distributions
           path: dist/
