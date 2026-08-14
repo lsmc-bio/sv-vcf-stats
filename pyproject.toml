@@ -28,7 +28,7 @@ dependencies = [
   "pysam==0.24.0",
   "PyYAML>=6.0.2,<7",
   "rfc8785>=0.1.4,<1",
-  "typer>=0.21,<0.22",
+  "typer>=0.21,<0.28",
 ]
 
 [project.urls]
