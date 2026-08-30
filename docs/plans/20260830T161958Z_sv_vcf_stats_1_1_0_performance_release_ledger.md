@@ -70,7 +70,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | PR-001 | Integration | Integrate disjoint patches into the clean release branch | SUCCESS | feature_implementation | Gate 3 | Lead | EventStore fdf092f, IO c726201, and evidence dfecd83/34382d3/46a64f4/f2f8130/1081536 cherry-picked without conflict |  | All disjoint agent slices are on the clean release branch. |
 | PR-002 | Integration | Limit integrated changes to approved performance/threading, focused tests, and release documentation | SUCCESS | active_product_contract | Gate 3 | Lead | origin/main...HEAD audit: 17 files limited to five package modules, four focused test files, one bounded input generator, and approved performance/release/ledger documentation; no .github, dependency, schema, or DayOA/DYEC changes |  | Integrated scope matches the approved plan exactly. |
 | PR-003 | Integration | Push branch and open a ready PR to main | SUCCESS | active_product_contract | Gate 3 | Lead | Ready PR https://github.com/lsmc-bio/sv-vcf-stats/pull/17 targets main from codex/sv-vcf-stats-1-1-0-fast-stats |  | Branch pushed normally and PR opened without bypass settings. |
-| PR-004 | Integration | Resolve only attributable failures and merge normally after existing CI passes | OPEN | active_product_contract | Gate 3 | Lead | Pending check and merge receipts |  |  |
+| PR-004 | Integration | Resolve only attributable failures and merge normally after existing CI passes | ATTEMPTING_BUGFIX | active_product_contract | Gate 3 | Lead | PR #17 CI run 33322994319: package audit and Python 3.12 failed at the same structural neutrality scan | The new public ledger retained repository-local organization and workstation evidence that is not appropriate in a neutral public artifact. | Remove only the rejected local/internal evidence, keep the scanner unchanged, rerun focused scanners, then require a fresh complete CI pass. |
 | REL-001 | Release | Verify clean merged main contains exactly approved changes | OPEN | active_product_contract | Gate 4 | Lead | Pending merged commit audit |  |  |
 | REL-002 | Release | Create/push annotated non-v 1.1.0 tag and verify object plus peeled commit | OPEN | active_product_contract | Gate 4 | Lead | Pending tag receipt |  |  |
 | REL-003 | Release | Dispatch existing manual distribution workflow at tag 1.1.0 | OPEN | active_product_contract | Gate 4 | Lead | Pending workflow run receipt |  |  |
@@ -104,6 +104,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:45Z: final combined focused validation passed 32 tests, two receipt schema validations, Ruff, mypy across 25 package files, and git diff --check; COMPAT-001 and PR-002 are terminal SUCCESS.
 - 2026-08-30T16:46Z: pushed the clean release branch and opened ready PR #17 to main; the existing unchanged PR CI now controls PR-004.
 - 2026-08-30T16:48Z: user explicitly expanded scope to a public-safe repository AGENTS.md and a low-key reference-inspired README refresh; AMEND-001 records the authorization before either file is edited.
+- 2026-08-30T16:49Z: PR #17 CI exposed one attributable root cause in two jobs: the structural neutrality scanner rejected local/internal evidence in the new ledger. PR-004 entered ATTEMPTING_BUGFIX; no scanner or workflow weakening is permitted.
 
 ## Final report
 
@@ -111,6 +112,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 19; OPEN 9; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 19; OPEN 8; IN_PROGRESS 0; ATTEMPTING_BUGFIX 1; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: PR CI/merge, release workflow, anonymous install, and post-release closeout remain unproven.
