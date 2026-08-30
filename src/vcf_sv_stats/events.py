@@ -37,14 +37,21 @@ class EventStore:
                 event_id TEXT,
                 is_bnd INTEGER NOT NULL
             );
-            CREATE INDEX records_id ON records(record_id);
-            CREATE INDEX records_event ON records(event_id);
             CREATE TABLE mates (
                 ordinal INTEGER NOT NULL,
                 mate_id TEXT NOT NULL
             );
-            CREATE INDEX mates_ordinal ON mates(ordinal);
-            CREATE INDEX mates_id ON mates(mate_id);
+            """
+        )
+
+    def _create_indexes(self) -> None:
+        """Create query indexes after the streaming ingestion phase completes."""
+        self.connection.executescript(
+            """
+            CREATE INDEX IF NOT EXISTS records_id ON records(record_id);
+            CREATE INDEX IF NOT EXISTS records_event ON records(event_id);
+            CREATE INDEX IF NOT EXISTS mates_ordinal ON mates(ordinal);
+            CREATE INDEX IF NOT EXISTS mates_id ON mates(mate_id);
             """
         )
 
@@ -57,17 +64,23 @@ class EventStore:
         *,
         is_bnd: bool,
     ) -> None:
+        real_record_id = record_id if record_id and record_id != "." else None
+        real_event_id = event_id if event_id and event_id != "." else None
+        real_mate_ids = tuple(mate_id for mate_id in mate_ids if mate_id and mate_id != ".")
+        if not (real_record_id or real_event_id or real_mate_ids or is_bnd):
+            return
         self.connection.execute(
             "INSERT INTO records(ordinal, record_id, event_id, is_bnd) VALUES (?, ?, ?, ?)",
-            (ordinal, record_id, event_id, int(is_bnd)),
+            (ordinal, real_record_id, real_event_id, int(is_bnd)),
         )
         self.connection.executemany(
             "INSERT INTO mates(ordinal, mate_id) VALUES (?, ?)",
-            ((ordinal, mate_id) for mate_id in mate_ids if mate_id),
+            ((ordinal, mate_id) for mate_id in real_mate_ids),
         )
 
     def summarize(self) -> EventSummary:
         self.connection.commit()
+        self._create_indexes()
         duplicate_rows = self.connection.execute(
             """
             SELECT record_id, COUNT(*) AS count
