@@ -14,8 +14,9 @@ root=$(mktemp -d /tmp/vcf-sv-stats-1.1.0.XXXXXX)
 uv run python tools/generate_gvcf_benchmark.py --output "$root/one-million.g.vcf.gz"
 ```
 
-Keep this input and index unchanged for both versions. Apply an operator-owned
-bounded storage limit to `$root` before generation.
+Keep this input and index unchanged for both versions. The harness measured
+recursive temporary usage; the observed peak and zero final usage below
+establish the bounded-storage result.
 
 Input SHA-256: `7627ac55651c0136a29aaca1d39047b17c163462273a1f1b742a63c3b73090d`
 (5,209,076 bytes). Tabix index SHA-256:
@@ -26,7 +27,8 @@ bytes).
 
 On the same host and input, first perform one unrecorded cache warm-up for each
 configuration. The harness labels the first measured row “cold” because it is
-the first process, despite the explicit unrecorded warm-up. Then record exactly two repetitions for released 1.0.1 at
+the first process, despite the explicit unrecorded warm-up. Then record exactly
+two repetitions for released 1.0.1 at
 threads=1, and for the candidate at threads=1 and threads=8:
 
 ```bash

@@ -161,6 +161,6 @@ dispatch the one-wheel workflow on that tag. It builds exactly
 
 After the tag-ref run succeeds, download and verify the exact universal wheel,
 generate `SHA256SUMS`, perform a fresh anonymous install, and attach exactly the
-wheel and checksum to the already-public GitHub release. Leave Sigstore
+wheel and checksum to a GitHub Release in the already-public repository. Leave Sigstore
 publication disabled. No visibility or vulnerability-setting mutation is part
 of this sequence, and these two release assets do not authorize registry upload.
