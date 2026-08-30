@@ -199,15 +199,15 @@ def test_readme_corpus_and_dependency_claims_match_metadata() -> None:
 
 def test_public_release_wheel_url_and_repository_metadata_are_exact() -> None:
     wheel_url = (
-        "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/"
-        "vcf_sv_stats-1.0.1-py3-none-any.whl"
+        "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/"
+        "vcf_sv_stats-1.1.0-py3-none-any.whl"
     )
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
 
     for document in (
         ROOT / "README.md",
         ROOT / "docs/distribution.md",
-        ROOT / "docs/releases/1.0.1.md",
+        ROOT / "docs/releases/1.1.0.md",
     ):
         text = document.read_text(encoding="utf-8")
         assert wheel_url in text

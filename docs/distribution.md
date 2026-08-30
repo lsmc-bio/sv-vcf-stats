@@ -1,18 +1,18 @@
 # Distribution qualification
 
-`vcf-sv-stats` is a public 1.0 release. This guide defines how a candidate
-proves installability and supply-chain evidence. Release `1.0.1` publishes one
+`vcf-sv-stats` is a public 1.x release. This guide defines how a candidate
+proves installability and supply-chain evidence. Release `1.1.0` publishes one
 wheel through GitHub Releases without publishing a package, container, or Conda
 artifact to a registry.
 
 ## GitHub release wheel
 
 The supported public installation artifact is the universal wheel attached to
-the `1.0.1` GitHub release:
+the `1.1.0` GitHub release:
 
 ```bash
 python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 ```
 
 The identical URL is used inside a Conda environment:
@@ -20,7 +20,7 @@ The identical URL is used inside a Conda environment:
 ```bash
 conda create --yes --name vcf-sv-stats python=3.13 pip
 conda run --name vcf-sv-stats python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 ```
 
 This is not a native Conda package or channel. The generated GitHub source-code

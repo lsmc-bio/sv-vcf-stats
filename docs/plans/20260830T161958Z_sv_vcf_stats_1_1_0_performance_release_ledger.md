@@ -11,10 +11,10 @@ Objective: make the existing thread option control HTSlib/BGZF input decompressi
 ## Scope and non-goals
 
 - Preserve statistics, diagnostics, JSON schemas, CLI shapes, default threads=1, and serial Python semantic/cross-record analysis.
-- No process sharding, per-contig workers, new dependencies, schema changes, compatibility aliases, output-strategy fields, dependency upgrades, broad refactors, DayOA/DYEC changes, production reruns, PyPI, Conda, container, Apptainer, or Sigstore publication.
+- No process sharding, per-contig workers, new dependencies, schema changes, compatibility aliases, output-strategy fields, dependency upgrades, broad refactors, external-pipeline changes, production reruns, PyPI, Conda, container, Apptainer, or Sigstore publication.
 - Local validation is intentionally focused. Existing automatic PR CI may run unchanged.
 - Any material expansion requires explicit user approval and a plan-amendment row before implementation.
-- Approved amendment: add a repository-local, public-safe AGENTS.md and refresh README.md with restrained open-source styling inspired by the user-supplied rgbw_colorspace_converter reference. These documentation changes must not name LSMC, disclose local/internal instructions, copy reference prose or assets, or change runtime/release behavior.
+- Approved amendment: add a repository-local, public-safe AGENTS.md and refresh README.md with restrained open-source styling inspired by the user-supplied rgbw_colorspace_converter reference. These documentation changes must not name any organization, disclose local operating instructions, copy reference prose or assets, or change runtime/release behavior.
 
 ## Multi-agent ownership
 
@@ -22,26 +22,26 @@ All branches start at origin/main commit da08f6808d6d4404451ce3244c98a5442cc5713
 
 | Owner | Model | Effort | Branch/worktree | Disjoint write scope |
 |---|---|---:|---|---|
-| Lead/integrator | gpt-5.6-sol | medium | codex/sv-vcf-stats-1-1-0-fast-stats at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-fast-stats | This ledger, integration-only conflict resolution, PR/release/closeout receipts |
-| IO performance agent | gpt-5.6-sol | high | codex/sv-vcf-stats-1-1-0-io at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-io | src/vcf_sv_stats/io.py, engine.py, canonical.py, the minimum normalization.py thread propagation, and focused IO/render tests only |
-| Event-store agent | gpt-5.6-terra | medium | codex/sv-vcf-stats-1-1-0-event-store at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-event-store | src/vcf_sv_stats/events.py and focused relationship/EventStore tests only |
-| Evidence/release agent | gpt-5.6-luna | low | codex/sv-vcf-stats-1-1-0-evidence at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-evidence | tests/test_distribution_qualification.py, performance/threading and release documentation, bounded benchmark evidence only |
+| Lead/integrator | gpt-5.6-sol | medium | codex/sv-vcf-stats-1-1-0-fast-stats | This ledger, integration-only conflict resolution, PR/release/closeout receipts |
+| IO performance agent | gpt-5.6-sol | high | codex/sv-vcf-stats-1-1-0-io | src/vcf_sv_stats/io.py, engine.py, canonical.py, the minimum normalization.py thread propagation, and focused IO/render tests only |
+| Event-store agent | gpt-5.6-terra | medium | codex/sv-vcf-stats-1-1-0-event-store | src/vcf_sv_stats/events.py and focused relationship/EventStore tests only |
+| Evidence/release agent | gpt-5.6-luna | low | codex/sv-vcf-stats-1-1-0-evidence | tests/test_distribution_qualification.py, performance/threading and release documentation, bounded benchmark evidence only |
 
 ## Gate 0 baseline
 
 - Fetch: git fetch --prune --tags origin completed 2026-08-30T16:10Z.
-- Repository: https://github.com/lsmc-bio/sv-vcf-stats.git; default branch main.
-- Current origin/main: da08f6808d6d4404451ce3244c98a5442cc57132, Merge pull request #14 from lsmc-bio/codex/public-release-candidate.
+- Repository: public GitHub origin; default branch main.
+- Current origin/main: da08f6808d6d4404451ce3244c98a5442cc57132, merge commit for PR #14.
 - Latest annotated tag and GitHub Release: 1.0.1; tag object peels to fa3bc9228223d167d428d935ea85a25454b0dbd5; release published 2026-08-14T00:00:18Z.
 - origin/main is two documentation/merge commits beyond 1.0.1. git diff --stat 1.0.1..origin/main reports only 13 additions and 12 deletions in the prior release ledger; no source, test, dependency, or workflow drift.
 - Tag 1.1.0 is absent locally and remotely after the fetch. GitHub Release 1.1.0 is absent.
-- The operator checkout /Users/jmajor/projects/lsmc/sv-vcf-stats is clean but remains on stale codex/initial-implementation at 099c1b1dd2e1e6f6e7ba86a972fb82ab80cf03a6; it is explicitly excluded from implementation.
+- A pre-existing checkout remains on stale codex/initial-implementation at 099c1b1dd2e1e6f6e7ba86a972fb82ab80cf03a6 and is explicitly excluded from implementation.
 - The fresh lead and three agent worktrees are clean and start at exact origin/main.
 - Thread path: cli.py validates the effective thread count and stores it in OperationRequest; engine._analyze does not pass request.threads to scan_variant; canonical.scan_variant calls io.open_variant(path); io.open_variant opens pysam.VariantFile(path, "r") without threads. The semantic scan is serial.
 - Per-record work: canonical.scan_variant calls str(record) for every record and _raw_filter_state renders the record again; EventStore.add inserts one records row for every scanned record and indexes are created in EventStore.__init__ before ingestion.
 - Existing production qualification evidence: docs/benchmarks/20260813_thread_matrix.json records CPU/wall ratios 1.007-1.017 at threads 1 and 10, and mean wall times 0.936 s versus 0.897 s. This is near-single-core behavior and proves only output invariance, not semantic multithreading.
 - Release contract: origin/main .github/workflows/distribution.yml is a manual tag-only build of exactly one vcf_sv_stats-<tag>-py3-none-any.whl artifact. GitHub Release 1.0.1 contains exactly vcf_sv_stats-1.0.1-py3-none-any.whl and SHA256SUMS.
-- Baseline limits: no production HG002, DayOA, cross-platform, or old ten-million-record campaign will be run.
+- Baseline limits: no production HG002, external-pipeline, cross-platform, or old ten-million-record campaign will be run.
 
 ## Control ledger
 
@@ -54,8 +54,8 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | BASE-003 | Baseline | Record no-op thread path, serial scan, all-record SQLite writes, duplicate rendering, and near-single-core evidence | SUCCESS | contract_test | Gate 0 | Lead | Source paths and 20260813 thread receipt summarized above |  | Current bottlenecks and semantic boundary are attributable. |
 | BASE-004 | Baseline | Confirm one universal wheel plus SHA256SUMS release contract | SUCCESS | active_product_contract | Gate 0 | Lead | origin/main distribution workflow; GitHub Release 1.0.1 asset inventory |  | Existing distribution contract remains exactly two release assets. |
 | AMEND-001 | Scope | Record explicit approval for public-safe AGENTS.md and low-key styled README.md refresh | SUCCESS | active_product_contract | Gate 3 | Lead | User instruction received while PR #17 CI was running |  | The documentation-only expansion is approved and bounded by the public-repository constraints above. |
-| DOCS-001 | Documentation | Add repository-local open-source AGENTS.md with no LSMC or sensitive/internal content | OPEN | active_product_contract | Gate 3 | Lead | Pending public-safety and instruction audit |  |  |
-| DOCS-002 | Documentation | Refresh README.md with restrained reference-inspired features without naming LSMC | OPEN | active_product_contract | Gate 3 | Lead | Pending reference review, render/source audit, and documentation tests |  |  |
+| DOCS-001 | Documentation | Add repository-local open-source AGENTS.md with no organization-specific or local-only content | SUCCESS | active_product_contract | Gate 3 | Lead | AGENTS.md uses repository-relative setup, contracts, safety, focused proof, Git, and release guidance; forbidden and structural-neutrality scanners report zero findings |  | Guidance is suitable for a public checkout and contains no workstation layout or local operating runbook. |
+| DOCS-002 | Documentation | Refresh README.md with restrained reference-inspired features without naming an organization | SUCCESS | active_product_contract | Gate 3 | Lead | README uses one five-color accent SVG, compact badges/navigation, accurate 1.1.0 threading/benchmark/install content, and corrected documentation links; 15 documentation/distribution tests, Ruff, SVG XML validation, both scanners, and diff check passed |  | The palette came from the user-specified public source; no source prose, imagery, name, or branding was copied. |
 | PERF-001 | IO | Propagate OperationRequest.threads to pysam.VariantFile(..., threads=N), default 1, reject less than 1 | SUCCESS | feature_implementation | Gate 1 | IO performance agent | Integrated commit c726201; focused propagation/default/API+CLI rejection, VCF 4.5, BCF, and normalization checks in 22-test combined run |  | All owned input readers receive the requested count; output writing and Python semantics stay serial. |
 | PERF-002 | Event store | Persist a row only for record ID, event ID, mate ID, or BND while retaining all diagnostics | SUCCESS | feature_implementation | Gate 1 | Event-store agent | Integrated commit fdf092f; tests/test_event_relationships.py plus existing malformed/relationship test -> 4 passed |  | Sparse insertion preserves duplicate, event, mate, orphan, reciprocal BND, and empty-graph results. |
 | PERF-003 | Event store | Create EventStore indexes only after ingestion immediately before summarization | SUCCESS | feature_implementation | Gate 1 | Event-store agent | EventStore init has no indexes; summarize creates four IF NOT EXISTS indexes; focused lifecycle assertion passed |  | Index maintenance is deferred until immediately before summary queries. |
@@ -68,9 +68,9 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | TEST-005 | Distribution | Replace only three stale broad-matrix assertions with one-wheel workflow assertions | SUCCESS | contract_test | Gate 2 | Evidence/release agent | tests/test_distribution_qualification.py retains the supported-target receipt test and replaces exactly three stale workflow tests; focused combined run -> 5 passed |  | One-wheel, exact-tag, and no-extra-format/signing contracts match origin/main workflow. |
 | BENCH-001 | Benchmark | Run bounded indexed one-million-record 24-contig gVCF benchmark with two warm repetitions; enforce speed, thread, digest, and temp bounds | SUCCESS | contract_test | Gate 2 | Evidence/release agent | Schema-valid receipts docs/benchmarks/20260830T1628Z_bench-001_1.0.1.json and 20260830T1630Z_bench-001_1.1.0.json; medians 6,123,152,250 ns (1.0.1 t1), 4,590,473,958.5 ns (candidate t1), 4,591,697,875 ns (candidate t8); normalized semantic SHA256 2c758bd603c64f6600bb47e05e9fc95fe2aa8a66ec68fce8c63e9480e2825ed2 |  | Candidate t1 improved 25.030870%; t8 regressed only 0.026662% from candidate t1; peak temp was 31,633,408 bytes released and 32,768 bytes candidate, with zero final temp bytes. |
 | PR-001 | Integration | Integrate disjoint patches into the clean release branch | SUCCESS | feature_implementation | Gate 3 | Lead | EventStore fdf092f, IO c726201, and evidence dfecd83/34382d3/46a64f4/f2f8130/1081536 cherry-picked without conflict |  | All disjoint agent slices are on the clean release branch. |
-| PR-002 | Integration | Limit integrated changes to approved performance/threading, focused tests, and release documentation | SUCCESS | active_product_contract | Gate 3 | Lead | origin/main...HEAD audit: 17 files limited to five package modules, four focused test files, one bounded input generator, and approved performance/release/ledger documentation; no .github, dependency, schema, or DayOA/DYEC changes |  | Integrated scope matches the approved plan exactly. |
-| PR-003 | Integration | Push branch and open a ready PR to main | SUCCESS | active_product_contract | Gate 3 | Lead | Ready PR https://github.com/lsmc-bio/sv-vcf-stats/pull/17 targets main from codex/sv-vcf-stats-1-1-0-fast-stats |  | Branch pushed normally and PR opened without bypass settings. |
-| PR-004 | Integration | Resolve only attributable failures and merge normally after existing CI passes | ATTEMPTING_BUGFIX | active_product_contract | Gate 3 | Lead | PR #17 CI run 33322994319: package audit and Python 3.12 failed at the same structural neutrality scan | The new public ledger retained repository-local organization and workstation evidence that is not appropriate in a neutral public artifact. | Remove only the rejected local/internal evidence, keep the scanner unchanged, rerun focused scanners, then require a fresh complete CI pass. |
+| PR-002 | Integration | Limit integrated changes to approved performance/threading, focused tests, and release documentation | SUCCESS | active_product_contract | Gate 3 | Lead | Final origin/main diff has 22 files: the approved 17-file performance/release slice plus AGENTS.md, README.md, docs/README.md, one decorative SVG, and one documentation-contract test from the explicit amendment; no workflow, dependency, schema, or external-pipeline changes |  | Final integrated scope matches the original plan plus AMEND-001 exactly. |
+| PR-003 | Integration | Push branch and open a ready PR to main | SUCCESS | active_product_contract | Gate 3 | Lead | Ready PR #17 targets main from codex/sv-vcf-stats-1-1-0-fast-stats |  | Branch pushed normally and PR opened without bypass settings. |
+| PR-004 | Integration | Resolve only attributable failures and merge normally after existing CI passes | IN_PROGRESS | active_product_contract | Gate 3 | Lead | PR #17 CI run 33322994319 had one shared neutrality root cause; the ledger was made repository-neutral without scanner/workflow changes and both local scanners now report zero findings | The new public ledger retained repository-local organization and workstation evidence that is not appropriate in a neutral public artifact. | Attributable fix is locally proven; fresh complete PR CI and normal merge remain pending. |
 | REL-001 | Release | Verify clean merged main contains exactly approved changes | OPEN | active_product_contract | Gate 4 | Lead | Pending merged commit audit |  |  |
 | REL-002 | Release | Create/push annotated non-v 1.1.0 tag and verify object plus peeled commit | OPEN | active_product_contract | Gate 4 | Lead | Pending tag receipt |  |  |
 | REL-003 | Release | Dispatch existing manual distribution workflow at tag 1.1.0 | OPEN | active_product_contract | Gate 4 | Lead | Pending workflow run receipt |  |  |
@@ -90,7 +90,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 
 ## Execution journal
 
-- 2026-08-30T16:10Z: fetched origin and tags; confirmed lsmc-bio/sv-vcf-stats, exact main, latest 1.0.1 release, and absent 1.1.0.
+- 2026-08-30T16:10Z: fetched origin and tags; confirmed the exact public source repository and main commit, latest 1.0.1 release, and absent 1.1.0.
 - 2026-08-30T16:14Z: confirmed current operator checkout is stale; read origin/main directly and found the intended one-wheel release workflow.
 - 2026-08-30T16:18Z: created lead and three agent worktrees from exact origin/main with disjoint branches and write scopes.
 - 2026-08-30T16:19Z: Gate 0 terminal with four SUCCESS rows; no implementation started before this ledger.
@@ -105,6 +105,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:46Z: pushed the clean release branch and opened ready PR #17 to main; the existing unchanged PR CI now controls PR-004.
 - 2026-08-30T16:48Z: user explicitly expanded scope to a public-safe repository AGENTS.md and a low-key reference-inspired README refresh; AMEND-001 records the authorization before either file is edited.
 - 2026-08-30T16:49Z: PR #17 CI exposed one attributable root cause in two jobs: the structural neutrality scanner rejected local/internal evidence in the new ledger. PR-004 entered ATTEMPTING_BUGFIX; no scanner or workflow weakening is permitted.
+- 2026-08-30T16:55Z: added the public AGENTS.md and restrained README styling amendment, updated current 1.1.0 installation/documentation assertions, removed local-only ledger evidence, and passed 15 focused tests, both token scanners, Ruff, SVG XML validation, and git diff --check. DOCS-001/002 are SUCCESS; PR-004 returned to IN_PROGRESS pending fresh CI.
 
 ## Final report
 
@@ -112,6 +113,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 19; OPEN 8; IN_PROGRESS 0; ATTEMPTING_BUGFIX 1; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 21; OPEN 6; IN_PROGRESS 1; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: PR CI/merge, release workflow, anonymous install, and post-release closeout remain unproven.
