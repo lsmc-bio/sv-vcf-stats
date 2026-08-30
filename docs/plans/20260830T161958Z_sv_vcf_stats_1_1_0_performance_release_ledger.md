@@ -62,7 +62,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | TEST-003 | Validation | Cover reciprocal cross-contig BNDs, orphan mates, duplicate IDs, explicit events, and reference-block-heavy gVCFs | SUCCESS | contract_test | Gate 2 | Event-store agent | tests/test_event_relationships.py and test_malformed_and_relationship_findings -> 4 passed in integrated worktree |  | Cross-contig reciprocal pair, orphan, duplicate, explicit event, BND without mate, and 1,000 reference blocks are covered. |
 | TEST-004 | Validation | Run targeted pytest, Ruff touched files, mypy package, and no broad local suite | OPEN | contract_test | Gate 2 | Lead | Pending integrated focused checks |  |  |
 | TEST-005 | Distribution | Replace only three stale broad-matrix assertions with one-wheel workflow assertions | IN_PROGRESS | contract_test | Gate 2 | Evidence/release agent | Agent dispatched for test-only workflow-contract patch |  |  |
-| BENCH-001 | Benchmark | Run bounded indexed one-million-record 24-contig gVCF benchmark with two warm repetitions; enforce speed, thread, digest, and temp bounds | IN_PROGRESS | contract_test | Gate 2 | Evidence/release agent | Agent dispatched to prepare the bounded benchmark and later run it against the integrated candidate |  |  |
+| BENCH-001 | Benchmark | Run bounded indexed one-million-record 24-contig gVCF benchmark with two warm repetitions; enforce speed, thread, digest, and temp bounds | ATTEMPTING_BUGFIX | contract_test | Gate 2 | Evidence/release agent | First focused generator check: distribution assertions passed, but new gVCF test failed because pysam represents a raw dot ID as None; fixup requested before measurements |  |  |
 | PR-001 | Integration | Integrate disjoint patches into the clean release branch | OPEN | feature_implementation | Gate 3 | Lead | Pending agent commits |  |  |
 | PR-002 | Integration | Limit integrated changes to approved performance/threading, focused tests, and release documentation | OPEN | active_product_contract | Gate 3 | Lead | Pending final diff audit |  |  |
 | PR-003 | Integration | Push branch and open a ready PR to main | OPEN | active_product_contract | Gate 3 | Lead | Pending PR URL |  |  |
@@ -92,6 +92,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:19Z: Gate 0 terminal with four SUCCESS rows; no implementation started before this ledger.
 - 2026-08-30T16:22Z: dispatched the three requested isolated workstreams with exact model/effort assignments and disjoint write ownership.
 - 2026-08-30T16:28Z: integrated EventStore commit fdf092f; focused relationship tests passed 4/4 and Ruff passed on touched files.
+- 2026-08-30T16:31Z: BENCH-001 entered ATTEMPTING_BUGFIX after the first focused generator test exposed an incorrect parsed-ID assertion; the generated raw row still uses ID dot.
 
 ## Final report
 
@@ -99,6 +100,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 7; OPEN 13; IN_PROGRESS 5; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 7; OPEN 13; IN_PROGRESS 4; ATTEMPTING_BUGFIX 1; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: benchmark thresholds, PR CI, release workflow, anonymous install, and post-release closeout remain unproven.
