@@ -58,7 +58,7 @@ documents policy and data behavior.
 | `--identity-context PATH` | Load explicit JSON or TSV analysis-unit mappings. |
 | `--reference PATH` | Provide an explicit local FASTA for reference-aware checks. |
 | `--mode MODE` | `compatible`, `standard`, `strict`, or `pedantic`. |
-| `--threads N` | Set deterministic worker count within the logical CPU limit. |
+| `--threads N` | Enable HTSlib/BGZF compressed-input decompression concurrency within the logical CPU limit. Python semantic scanning and cross-record relationship resolution remain serial. |
 | `--temp-dir DIR` | Use an explicit existing directory for temporary state. |
 | `--regions REGION` | Restrict reporting to one or more regions. |
 | `--regions-scan` | Permit full scanning when region access lacks an index. |

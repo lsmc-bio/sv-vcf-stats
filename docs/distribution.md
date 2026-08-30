@@ -148,6 +148,11 @@ is not part of release `1.0.1`. Do not resume its matrix. The current
 `.github/workflows/distribution.yml` manually builds only the universal wheel
 that will be attached to the GitHub release.
 
+For the 1.1.0 release contract, the only published artifacts are one universal
+`py3-none-any` wheel and a `SHA256SUMS` file containing its digest. No source
+archive, native platform wheel, Conda package, OCI image, or Apptainer image is
+part of this release contract.
+
 ## Public GitHub wheel release sequence
 
 Create the immutable annotated `1.0.1` tag on the merged release commit and
