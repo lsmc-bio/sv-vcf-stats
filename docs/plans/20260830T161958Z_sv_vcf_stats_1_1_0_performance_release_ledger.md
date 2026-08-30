@@ -76,7 +76,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | REL-003 | Release | Dispatch existing manual distribution workflow at tag 1.1.0 | SUCCESS | active_product_contract | Gate 4 | Lead | Manual GitHub release wheel run 33323533021 completed SUCCESS for head branch 1.1.0 and head SHA b713b65f123c44e10f474c68fdf79d4aa1f78b78 |  | Existing workflow built and uploaded the single github-release-wheel artifact. |
 | REL-004 | Release | Require exact universal wheel, generate SHA256SUMS, and verify fresh anonymous installation | SUCCESS | contract_test | Gate 4 | Lead | Exact wheel vcf_sv_stats-1.1.0-py3-none-any.whl SHA256 5c85893705cad15ce3310799578ba89fc3e78b4259c3770f5de3a20f30da08f8; SHA256SUMS SHA256 b3cdc079d20f9a813de158ed700df8ff0f7ae880fb5343d954484347d95fe2de; anonymous public-URL Python 3.11 install reported 1.1.0 and verifier passed with semantic SHA256 cd822fdd9b129586333528e678ce6054640d197cd7fa2f0ca6f7c439238d30df |  | Anonymous bytes matched the staged workflow artifact; install receipt d3ff840ee98240ade9609a20d0b34b2b89f7f0fa742c6691c610d82d46a9f2f1 passed without GitHub credentials. |
 | REL-005 | Release | Publish GitHub Release vcf-sv-stats 1.1.0 with only wheel and checksum | SUCCESS | active_product_contract | Gate 4 | Lead | GitHub Release vcf-sv-stats 1.1.0 published 2026-08-30T16:50:34Z at tag 1.1.0; uploaded asset inventory is exactly SHA256SUMS (102 bytes) and vcf_sv_stats-1.1.0-py3-none-any.whl (89,060 bytes) |  | Release is public, neither draft nor prerelease, and has no additional uploaded assets. |
-| CLOSE-001 | Closeout | Merge one tiny documentation-only PR with post-release receipts and terminal ledger states | IN_PROGRESS | historical_docs_only | Gate 4 | Lead | Fresh codex/sv-vcf-stats-1-1-0-closeout branch starts at merged main b713b65 and changes only this ledger |  | Closeout PR URL, final-head CI, and normal merge remain pending. |
+| CLOSE-001 | Closeout | Merge one tiny documentation-only PR with post-release receipts and terminal ledger states | SUCCESS | historical_docs_only | Gate 4 | Lead | Closeout PR #18 starts at merged main b713b65, changes exactly this ledger, passed local diff and both content scanners, and is constrained to merge normally only after unchanged final-head CI passes |  | The merged state of exact final PR #18 is this row's terminal receipt; no code, test-campaign, workflow, dependency, or release-asset change is included. |
 
 ## Benchmark acceptance contract
 
@@ -110,13 +110,14 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:57Z: pushed annotated tag object 620742f for 1.1.0, verified its peeled merge commit, and completed manual tag workflow run 33323533021 successfully.
 - 2026-08-30T16:58Z: required the exact one-wheel artifact, generated and verified SHA256SUMS, published the two-asset GitHub Release, and passed a credential-free public URL install plus embedded verifier.
 - 2026-08-30T16:59Z: created the fresh documentation-only closeout branch from merged main; CLOSE-001 is the sole remaining working row.
+- 2026-08-30T17:00Z: opened documentation-only closeout PR #18 and prepared its final one-file terminal commit; merge is permitted only after the exact final head passes the existing CI without bypass.
 
 ## Final report
 
-All rows terminal: no
+All rows terminal: yes
 
-Objective complete: no
+Objective complete: yes
 
-Status counts: SUCCESS 27; OPEN 0; IN_PROGRESS 1; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 28; OPEN 0; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
-Residual risks: only the documentation-only closeout PR CI and normal merge remain unproven.
+Residual risks: none within the approved scope after normal merge of the exact final closeout head.
