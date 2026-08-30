@@ -16,7 +16,13 @@ from .adapters import detect_adapter, get_adapter
 from .canonical import scan_variant
 from .canonicalize import CanonicalWriteResult, write_canonical_vcf
 from .exceptions import OutputError, UsageError, ValidationFailure
-from .io import assert_distinct_paths, input_metadata, materialize_input, open_variant
+from .io import (
+    assert_distinct_paths,
+    input_metadata,
+    materialize_input,
+    open_variant,
+    validate_threads,
+)
 from .models import (
     Diagnostic,
     Fixability,
@@ -164,6 +170,7 @@ def normalize(
     assessment_output: str | Path | None = None,
     force: bool = False,
 ) -> NormalizationResult:
+    validate_threads(request.threads)
     if request.regions:
         raise UsageError("Regional input selection is not permitted for normalization")
     if profile not in {"conservative", "caller-lossless", "canonical"}:
@@ -215,7 +222,7 @@ def normalize(
             )
         _ensure_output_contract(source, output, index, manifest, receipt, force=force)
         source_meta = input_metadata(source, display_name=Path(str(request.input_path)).name)
-        with open_variant(source) as input_variant:
+        with open_variant(source, threads=request.threads) as input_variant:
             header_text = str(input_variant.header)
         detection = detect_adapter(
             header_text,
@@ -227,6 +234,7 @@ def normalize(
             source,
             temp_dir=request.temp_dir,
             adapter_id=detection.selected.adapter_id,
+            threads=request.threads,
         )
         if profile != "conservative" and (
             not descriptor.rewrite_supported or detection.selected.status != "supported"
@@ -390,7 +398,7 @@ def normalize(
                         for record in canonical_input:
                             output_variant.write(record)
             else:
-                with open_variant(source) as input_variant:
+                with open_variant(source, threads=request.threads) as input_variant:
                     header = input_variant.header.copy()
                     header.add_line(f"##VCFSVSTATS1_REQUEST_SHA256={request_sha}")
                     mode = "wb" if inferred == "bcf" else "wz"
@@ -417,7 +425,7 @@ def normalize(
                         os.fsync(mapping_handle.fileno())
 
             stage_index = _index_variant(stage_data, index_format=effective_index)
-            with open_variant(stage_data) as check:
+            with open_variant(stage_data, threads=request.threads) as check:
                 output_records = sum(1 for _ in check)
             expected_output_records = (
                 int(scan.callset["record_count"])
@@ -430,6 +438,7 @@ def normalize(
                 stage_data,
                 temp_dir=request.temp_dir,
                 adapter_id=detection.selected.adapter_id,
+                threads=request.threads,
             )
             output_blockers = [
                 item for item in output_scan.diagnostics if item.blocks_normalization

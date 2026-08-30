@@ -12,7 +12,7 @@ from .adapters import detect_adapter
 from .canonical import ScanResult, scan_variant
 from .exceptions import UsageError, ValidationFailure
 from .identity import load_identity_context, report_id, validate_sample_mappings
-from .io import input_metadata, materialize_input, open_variant
+from .io import input_metadata, materialize_input, open_variant, validate_threads
 from .models import (
     DiscrepancyResult,
     InspectionResult,
@@ -30,6 +30,7 @@ def _analyze(
     *,
     max_records: int | None = None,
 ) -> tuple[dict[str, Any], Any, ScanResult]:
+    validate_threads(request.threads)
     display_name = "stdin" if str(request.input_path) == "-" else Path(request.input_path).name
     with materialize_input(
         request.input_path,
@@ -38,7 +39,7 @@ def _analyze(
         max_uncompressed_bytes=request.max_uncompressed_bytes,
     ) as path:
         metadata = input_metadata(path, display_name=display_name)
-        with open_variant(path) as variant:
+        with open_variant(path, threads=request.threads) as variant:
             header_text = str(variant.header)
         detection = detect_adapter(
             header_text,
@@ -52,6 +53,7 @@ def _analyze(
             adapter_id=detection.selected.adapter_id,
             regions=request.regions,
             regions_scan=request.regions_scan,
+            threads=request.threads,
         )
     metadata["complete"] = scan.complete
     if request.regions:
