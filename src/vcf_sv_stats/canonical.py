@@ -18,6 +18,7 @@ from .io import (
     open_variant,
     parse_regions,
     record_in_regions,
+    validate_threads,
 )
 from .models import CanonicalObservation, Diagnostic, Fixability, OperationRequest, Severity
 from .vcf45 import (
@@ -173,8 +174,12 @@ def _support_vector(value: Any) -> str | None:
     return scalar
 
 
-def _raw_filter_state(record: Any) -> tuple[str, tuple[str, ...]]:
-    raw_filter = str(record).split("\t", 7)[6]
+def _raw_record_fields(record_text: str) -> tuple[str, str]:
+    columns = record_text.split("\t", 8)
+    return columns[6], columns[7]
+
+
+def _raw_filter_state(record: Any, raw_filter: str) -> tuple[str, tuple[str, ...]]:
     keys = tuple(str(key) for key in record.filter)
     if raw_filter == ".":
         return "missing", keys
@@ -196,6 +201,7 @@ def _mate_ids(record: Any) -> tuple[str, ...]:
 
 def iter_canonical(request: OperationRequest) -> Iterator[CanonicalObservation]:
     """Yield immutable, source-ordered allele observations without materializing records."""
+    validate_threads(request.threads)
     regions = parse_regions(request.regions)
     with (
         materialize_input(
@@ -204,14 +210,15 @@ def iter_canonical(request: OperationRequest) -> Iterator[CanonicalObservation]:
             max_input_bytes=request.max_input_bytes,
             max_uncompressed_bytes=request.max_uncompressed_bytes,
         ) as path,
-        open_variant(path) as variant,
+        open_variant(path, threads=request.threads) as variant,
     ):
         if regions and not request.regions_scan and not has_variant_index(path):
             raise InputError("Regional iteration requires an index or explicit regions_scan")
         for record_ordinal, record in enumerate(variant, start=1):
             if not record_in_regions(record, regions):
                 continue
-            filter_state, _keys = _raw_filter_state(record)
+            raw_filter, _raw_info = _raw_record_fields(str(record))
+            filter_state, _keys = _raw_filter_state(record, raw_filter)
             mate_ids = _mate_ids(record)
             event_value = record.info.get("EVENT") if "EVENT" in record.info else None
             original = _first_info(record, "SVTYPE")
@@ -241,6 +248,7 @@ def scan_variant(
     adapter_id: str | None = None,
     regions: tuple[str, ...] = (),
     regions_scan: bool = False,
+    threads: int = 1,
 ) -> ScanResult:
     diagnostics: list[Diagnostic] = []
     record_count = 0
@@ -277,7 +285,7 @@ def scan_variant(
     stopped_early = False
 
     try:
-        variant = open_variant(path)
+        variant = open_variant(path, threads=threads)
         if parsed_regions and not regions_scan and not has_variant_index(path):
             variant.close()
             raise InputError("Regional operation requires an index or explicit regions_scan")
@@ -298,7 +306,9 @@ def scan_variant(
             "text": header_text,
         }
         diagnostics.extend(validate_header_contract(header_contract, adapter_id=adapter_id))
-        exact_record_texts = iter(iter_record_texts(path)) if header_contract.is_v45 else None
+        exact_record_texts = (
+            iter(iter_record_texts(path, threads=threads)) if header_contract.is_v45 else None
+        )
         reserved_expectations = {
             "GQ": (variant.header.formats, "Integer", None),
             "PS": (variant.header.formats, "Integer", None),
@@ -349,6 +359,7 @@ def scan_variant(
                     complete = False
                     stopped_early = True
                     break
+                raw_filter, raw_info = _raw_record_fields(record_text)
                 alts = tuple(record.alts or ())
                 if len(alts) > 1:
                     multiallelic += 1
@@ -370,7 +381,7 @@ def scan_variant(
                         adapter_id=adapter_id,
                     )
                 )
-                filter_state, filter_keys = _raw_filter_state(record)
+                filter_state, filter_keys = _raw_filter_state(record, raw_filter)
                 if filter_state == "missing":
                     filter_counts["missing"] += 1
                 elif filter_state == "unfiltered":
@@ -381,7 +392,6 @@ def scan_variant(
                     filter_counts["filtered_any"] += 1
                     filter_counts.update(filter_keys)
 
-                raw_info = record_text.split("\t", 8)[7]
                 raw_values = {
                     item.partition("=")[0]: item.partition("=")[2]
                     for item in raw_info.split(";")

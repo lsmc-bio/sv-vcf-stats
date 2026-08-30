@@ -29,9 +29,9 @@ module. Start with the question you are trying to answer.
 | Question | Document |
 |---|---|
 | Which checks should I run? | [Testing guide](testing.md) |
-| What performance claims have executable evidence? | [Performance qualification](benchmarks/20260813_streaming_qualification.md) |
+| What performance claims have executable evidence? | [1.1.0 performance qualification](benchmarks/20260830_sv_vcf_stats_1_1_0_qualification.md) |
 | Which installation targets and artifact proofs are required? | [Distribution guide](distribution.md) |
-| What exactly is in the public installable release? | [1.0.1 release notes](releases/1.0.1.md) |
+| What exactly is in the public installable release? | [1.1.0 release notes](releases/1.1.0.md) |
 | What was retained from the private 1.0.0 candidate? | [1.0.0 release notes](releases/1.0.0.md) |
 | How were the HG002 fixtures selected and sanitized? | [Fixture governance](fixture-governance.md) |
 | Which acceptance criteria are complete? | [Implementation ledger](plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) |

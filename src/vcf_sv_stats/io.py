@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 import pysam
 
-from .exceptions import InputError, OutputError
+from .exceptions import InputError, OutputError, UsageError
 from .serialization import file_sha256
 
 DEFAULT_MAX_INPUT_BYTES = 100_000_000_000
@@ -175,19 +175,26 @@ def input_metadata(path: str | Path, *, display_name: str | None = None) -> dict
     }
 
 
-def open_variant(path: str | Path) -> pysam.VariantFile:
+def validate_threads(threads: int) -> None:
+    if threads < 1:
+        raise UsageError("threads must be positive")
+
+
+def open_variant(path: str | Path, *, threads: int = 1) -> pysam.VariantFile:
+    validate_threads(threads)
     try:
-        return pysam.VariantFile(str(path), "r")
+        return pysam.VariantFile(str(path), "r", threads=threads)
     except (OSError, ValueError) as exc:
         raise InputError(f"Unable to open VCF/BCF input: {exc}") from exc
 
 
-def iter_record_texts(path: str | Path) -> Iterator[str]:
+def iter_record_texts(path: str | Path, *, threads: int = 1) -> Iterator[str]:
     """Yield exact VCF records when textual, or HTSlib-rendered records for BCF."""
+    validate_threads(threads)
     source = Path(path)
     container = str(input_metadata(source)["container"])
     if container == "bcf":
-        with open_variant(source) as variant:
+        with open_variant(source, threads=threads) as variant:
             for record in variant:
                 yield str(record).rstrip("\n")
         return

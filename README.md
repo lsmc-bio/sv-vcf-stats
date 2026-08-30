@@ -1,4 +1,8 @@
-# vcf-sv-stats
+<p align="center">
+  <img alt="Decorative project color bar" src="docs/assets/readme-accent.svg" width="100%">
+</p>
+
+<h1 align="center">vcf-sv-stats</h1>
 
 <p align="center">
   <strong>Know what your structural-variant callset actually contains.</strong><br>
@@ -7,14 +11,21 @@
 </p>
 
 <p align="center">
-  <img alt="Python 3.11 through 3.13" src="https://img.shields.io/badge/Python-3.11%E2%80%933.13-3776AB?logo=python&amp;logoColor=white">
-  <img alt="VCF and BCF" src="https://img.shields.io/badge/input-VCF%20%7C%20BCF-7B61FF">
-  <img alt="Apache License 2.0" src="https://img.shields.io/badge/license-Apache--2.0-2EA44F">
-  <img alt="1.0 release" src="https://img.shields.io/badge/status-1.0%20release-2EA44F">
-  <img alt="no telemetry" src="https://img.shields.io/badge/telemetry-none-111827">
+  <a href="https://github.com/lsmc-bio/sv-vcf-stats/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lsmc-bio/sv-vcf-stats/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <img alt="Python 3.11 through 3.13" src="https://img.shields.io/badge/Python-3.11%E2%80%933.13-686F82?logo=python&amp;logoColor=white">
+  <img alt="VCF and BCF" src="https://img.shields.io/badge/input-VCF%20%7C%20BCF-F8A520">
+  <img alt="Apache License 2.0" src="https://img.shields.io/badge/license-Apache--2.0-363844">
+  <a href="https://github.com/lsmc-bio/sv-vcf-stats/releases/tag/1.1.0"><img alt="release 1.1.0" src="https://img.shields.io/badge/release-1.1.0-C56302"></a>
+  <img alt="no telemetry" src="https://img.shields.io/badge/telemetry-none-EBDFC6?labelColor=363844">
 </p>
 
----
+<p align="center">
+  <a href="#the-30-second-tour">Tour</a> ·
+  <a href="#why-this-is-different">Why it is different</a> ·
+  <a href="#quick-start">Install and use</a> ·
+  <a href="#machine-readable-contracts">Contracts</a> ·
+  <a href="#contributing">Contribute</a>
+</p>
 
 Structural-variant VCFs are often *parseable* long before they are
 *interpretable*. One row may describe an allele, one half of a reciprocal
@@ -27,11 +38,10 @@ streams records into a canonical observation model, resolves relationships on
 disk, reports layered diagnostics, and emits deterministic JSON whose metrics
 name their grain and denominator.
 
-> **Project status:** the stable v1 implementation and its qualification
-> evidence are retained in this public repository. Release `1.0.1` adds one
-> supported distribution path: pip installation from the wheel attached to the
-> GitHub release. No package, Conda, or container registry is used, and external
-> upstream contribution remains a separate approval gate.
+> **Current release:** `1.1.0` keeps the stable v1 semantic and artifact
+> contracts while making compressed scans leaner. The supported distribution is
+> one universal wheel plus `SHA256SUMS` on the GitHub release. No package, Conda,
+> or container registry is used.
 
 ## The 30-second tour
 
@@ -41,6 +51,7 @@ Run the tool against the bundled, sanitized HG002 Manta fixture:
 uv sync --locked --all-extras
 uv run vcf-sv-stats --json stats \
   test_data/vcf/manta.native.hg002.subset.vcf.gz \
+  --threads 8 \
   --output /tmp/manta.vcf-sv-stats.json
 
 jq '{
@@ -96,6 +107,27 @@ instead of collapsing them into a single ambiguous “variant count.”
 The result is a tool that can say **“I do not know”** precisely—which is far
 more useful than a confident but biologically wrong number.
 
+## Faster compressed scans, unchanged semantics
+
+`--threads` controls HTSlib/BGZF decompression for compressed VCF and BCF
+inputs. The Python semantic scan and cross-record relationship resolution stay
+serial, so changing the thread count does not change statistics, diagnostics,
+ordering, schemas, or digests.
+
+The bounded 1.1.0 qualification used one indexed, 24-contig,
+one-million-record reference-block-heavy gVCF on the same host and input:
+
+| Comparison | Median wall-time result |
+|---|---:|
+| 1.1.0 threads=1 vs 1.0.1 threads=1 | **25.030870% faster** |
+| 1.1.0 threads=8 vs 1.1.0 threads=1 | **0.026662% slower** |
+
+Candidate outputs at threads 1, 2, and 8 were identical, and the released and
+candidate semantic payloads matched after normalizing only the producer version
+and its dependent digest. See the
+[qualification note](docs/benchmarks/20260830_sv_vcf_stats_1_1_0_qualification.md)
+and its schema-valid raw receipts.
+
 ## One pipeline, explicit trust boundaries
 
 ```mermaid
@@ -141,11 +173,11 @@ confirmed retrieval of one pinned public reference profile.
 
 ### Install from the GitHub release
 
-Install the exact `1.0.1` wheel in any Python 3.11, 3.12, or 3.13 environment:
+Install the exact `1.1.0` wheel in any Python 3.11, 3.12, or 3.13 environment:
 
 ```bash
 python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 vcf-sv-stats version
 vcf-sv-stats-verify-install
 ```
@@ -156,7 +188,7 @@ use its Python interpreter to run pip:
 ```bash
 conda create --yes --name vcf-sv-stats python=3.13 pip
 conda run --name vcf-sv-stats python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 conda run --name vcf-sv-stats vcf-sv-stats version
 conda run --name vcf-sv-stats vcf-sv-stats-verify-install
 ```
@@ -383,27 +415,27 @@ names—not source rows or private paths. See [SECURITY.md](SECURITY.md).
 | [Output contract](docs/output-contract.md) | Summary, diagnostics, manifests, receipts, and consumer rules |
 | [Fixture governance](docs/fixture-governance.md) | HG002 derivation, sanitization, provenance, and redistribution review |
 | [Testing guide](docs/testing.md) | Local matrix, fixture goldens, package and neutrality checks |
-| [Performance qualification](docs/benchmarks/20260813_streaming_qualification.md) | 100K through 10M scaling, memory, baseline, threads, and interruption evidence |
-| [Distribution guide](docs/distribution.md) | Offline install, Bioconda, OCI, Apptainer, SBOM, and provenance contract |
+| [1.1.0 performance qualification](docs/benchmarks/20260830_sv_vcf_stats_1_1_0_qualification.md) | Bounded one-million-record comparison, parity, and temporary-storage evidence |
+| [Distribution guide](docs/distribution.md) | Exact GitHub wheel, checksum, and fresh-install release contract |
 | [MultiQC integration](docs/multiqc-integration.md) | Producer/consumer boundary for aggregate reporting |
 | [Normative specification](docs/specifications/vcf-sv-stats-1.0.0.md) | 1.0 requirements and stable terminology |
+| [1.1.0 release notes](docs/releases/1.1.0.md) | Input-threading boundary and focused performance changes |
 | [1.0.1 release notes](docs/releases/1.0.1.md) | Public GitHub wheel installation and qualification |
 | [1.0.0 release notes](docs/releases/1.0.0.md) | Historical private-candidate evidence and boundaries |
 | [Implementation ledger](docs/plans/20260813T065930Z_sv_vcf_stats_v1_implementation_ledger.md) | Acceptance evidence, completion accounting, and release gates |
 
 ## Release boundary
 
-The implementation plan and its six former shortfalls are complete: finalized
-VCF 4.5 behavior, source/merged comparison, canonical multiallelic
-normalization, native aggregate reporting, large-callset qualification, and
-offline multi-platform distribution evidence all have executable proofs.
+The stable v1 semantic contracts cover finalized VCF 4.5 behavior,
+source/merged comparison, canonical multiallelic normalization, native
+aggregate reporting, and large-callset qualification. Release `1.1.0` changes
+only input decompression threading and redundant scan/EventStore work; it does
+not introduce process sharding or a new output contract.
 
-The repository and its GitHub release history are public. Release `1.0.1`
-publishes only a universal wheel and its checksum as uploaded GitHub assets.
-No package, Conda, or container artifact is published to a registry. Fixture
-redistribution retains its dated release-candidate review. Native MultiQC
-integration remains qualified in the maintained fork; any external upstream
-contribution remains a later, independently reviewed action.
+The repository and its GitHub release history are public. Release `1.1.0`
+publishes only a universal wheel and its checksum as uploaded GitHub assets. No
+package, Conda, container, or signing artifact is published to a registry or
+transparency service. Fixture redistribution retains its dated review.
 
 `caller-lossless` remains a reserved, unsupported profile, and every lossy
 authorization remains rejected because v1 implements no lossy transform.

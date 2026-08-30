@@ -1,0 +1,79 @@
+{
+  "environment": {
+    "cpu_model": "Apple M5",
+    "filesystem_type": "apfs",
+    "htslib_version": "1.23.1",
+    "logical_cpu_count": 10,
+    "machine": "arm64",
+    "operating_system": "Darwin",
+    "operating_system_release": "25.5.0",
+    "pysam_version": "0.24.0",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15",
+    "source_commit": "fa3bc9228223d167d428d935ea85a25454b0dbd5",
+    "temp_monitor_interval_ms": 10,
+    "tool_version": "1.0.1",
+    "total_memory_bytes": 34359738368
+  },
+  "inputs": [
+    {
+      "container": "vcf.gz",
+      "deterministic_stats_payload": true,
+      "input_bytes": 5209076,
+      "input_name": "one-million.g.vcf.gz",
+      "measurements": [
+        {
+          "alleles": 1000000,
+          "cache_state": "cold_process_uncontrolled_os_cache",
+          "contigs": 24,
+          "elapsed_ns": 6167032000,
+          "input_bytes_per_second": 844664.9863337826,
+          "mode": "stats",
+          "output_json_bytes": 14139,
+          "payload_sha256": "4c65d73da48d360e9e8bda7f7620eabbed4dbd1dd4a3d375e2e888b55fb99683",
+          "process_peak_rss_bytes": 43712512,
+          "records": 1000000,
+          "records_per_second": 162152.5557188612,
+          "repetition": 1,
+          "samples": 1,
+          "system_cpu_ns": 269587000,
+          "temporary_final_bytes": 0,
+          "temporary_peak_bytes": 31633408,
+          "threads": 1,
+          "user_cpu_ns": 5996565000
+        },
+        {
+          "alleles": 1000000,
+          "cache_state": "warm_process_uncontrolled_os_cache",
+          "contigs": 24,
+          "elapsed_ns": 6079272500,
+          "input_bytes_per_second": 856858.4481120069,
+          "mode": "stats",
+          "output_json_bytes": 14139,
+          "payload_sha256": "4c65d73da48d360e9e8bda7f7620eabbed4dbd1dd4a3d375e2e888b55fb99683",
+          "process_peak_rss_bytes": 43859968,
+          "records": 1000000,
+          "records_per_second": 164493.36659937518,
+          "repetition": 2,
+          "samples": 1,
+          "system_cpu_ns": 265794000,
+          "temporary_final_bytes": 0,
+          "temporary_peak_bytes": 31633408,
+          "threads": 1,
+          "user_cpu_ns": 5910858000
+        }
+      ]
+    }
+  ],
+  "measurement_policy": {
+    "baseline": "minimal_sequential_pysam_0.24.0_record_scan",
+    "cache": "first-process-cold-label_without_os_cache_eviction_then_warm",
+    "clock": "monotonic_wall_clock",
+    "memory": "fresh_process_peak_rss_including_native_libraries",
+    "paths": "basename_only",
+    "temporary_space": "10ms_recursive_size_sampling"
+  },
+  "receipt_sha256": "9ba48bf6df5a27e4e4fe4daa529c3b26d44276ed117d9de9a3821685119dcdd7",
+  "schema_name": "vcf-sv-stats.streaming-benchmark",
+  "schema_version": "1.0.0"
+}

@@ -34,43 +34,34 @@ def test_complete_supported_distribution_matrix(tmp_path: Path) -> None:
     assert receipt["all_supported_targets_passed"] is True
 
 
-def test_distribution_workflow_scans_loaded_platform_images() -> None:
+def test_distribution_workflow_builds_one_universal_wheel() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
 
-    assert 'syft "vcf-sv-stats:$architecture"' in workflow
-    assert "release/linux-$architecture.container.cyclonedx.json" in workflow
-    assert "syft scan oci-archive:" not in workflow
-    assert "release/CHECKSUMS.sha256" not in workflow
-    assert "release/candidate.provenance.intoto.json" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "name: GitHub release wheel" in workflow
+    assert "name: Build universal wheel" in workflow
+    assert "uv build --wheel" in workflow
+    assert "test \"$(find dist -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')\" = 1" in workflow
+    assert 'vcf_sv_stats-${GITHUB_REF_NAME}-py3-none-any.whl' in workflow
+    for retired_job in ("aggregate-install-matrix", "bioconda", "oci", "sigstore", "apptainer"):
+        assert f"  {retired_job}:" not in workflow
 
 
-def test_distribution_workflow_uses_exact_keyless_identity_on_default_branch() -> None:
+def test_distribution_workflow_has_no_extra_release_formats_or_signing() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
-    oci = workflow.split("\n  oci:\n", 1)[1].split("\n  sigstore:\n", 1)[0]
-    sigstore = workflow.split("\n  sigstore:\n", 1)[1].split("\n  apptainer:\n", 1)[0]
-
-    assert "id-token: write" not in oci
-    assert "cosign" not in oci
-    assert sigstore.count("id-token: write") == 1
-    assert "publish_sigstore_entry:" in workflow
-    assert "default: false" in workflow
-    assert "github.event_name == 'workflow_dispatch'" in sigstore
-    assert "inputs.publish_sigstore_entry" in sigstore
-    assert "github.ref_name == github.event.repository.default_branch" in sigstore
-    assert "success()" in sigstore
-    for prerequisite in ("aggregate-install-matrix", "bioconda", "oci", "apptainer"):
-        assert f"- {prerequisite}" in sigstore
-    assert 'certificate_identity="$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF"' in sigstore
-    assert 'test "$certificate_identity" = "$expected_identity"' in sigstore
-    assert '--certificate-identity "$certificate_identity"' in sigstore
-    assert "--certificate-oidc-issuer https://token.actions.githubusercontent.com" in sigstore
-    assert "cosign generate-key-pair" not in workflow
-    assert "COSIGN_PASSWORD" not in workflow
-    assert "candidate.cosign.pub" not in workflow
+    assert "id-token:" not in workflow
+    assert "cosign" not in workflow
+    assert "sigstore" not in workflow
 
 
-def test_tagged_distribution_qualification_requires_exact_tag_version() -> None:
+def test_one_wheel_workflow_requires_an_exact_tag_version() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
 
-    assert workflow.count('if test "$GITHUB_REF_TYPE" = tag; then') == 4
-    assert workflow.count('test "$candidate_version" = "$GITHUB_REF_NAME"') == 4
+    assert workflow.count('test "$GITHUB_REF_TYPE" = tag') == 1
+    assert 'SETUPTOOLS_SCM_PRETEND_VERSION="$GITHUB_REF_NAME"' in workflow
+    assert (
+        'test "$(basename "$wheel")" = "vcf_sv_stats-${GITHUB_REF_NAME}-py3-none-any.whl"'
+        in workflow
+    )
+    assert "uv build --sdist" not in workflow
+    assert "docker build" not in workflow

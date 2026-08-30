@@ -1,18 +1,18 @@
 # Distribution qualification
 
-`vcf-sv-stats` is a public 1.0 release. This guide defines how a candidate
-proves installability and supply-chain evidence. Release `1.0.1` publishes one
+`vcf-sv-stats` is a public 1.x release. This guide defines how a candidate
+proves installability and supply-chain evidence. Release `1.1.0` publishes one
 wheel through GitHub Releases without publishing a package, container, or Conda
 artifact to a registry.
 
 ## GitHub release wheel
 
 The supported public installation artifact is the universal wheel attached to
-the `1.0.1` GitHub release:
+the `1.1.0` GitHub release:
 
 ```bash
 python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 ```
 
 The identical URL is used inside a Conda environment:
@@ -20,7 +20,7 @@ The identical URL is used inside a Conda environment:
 ```bash
 conda create --yes --name vcf-sv-stats python=3.13 pip
 conda run --name vcf-sv-stats python -m pip install --no-cache-dir \
-  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.0.1/vcf_sv_stats-1.0.1-py3-none-any.whl"
+  "https://github.com/lsmc-bio/sv-vcf-stats/releases/download/1.1.0/vcf_sv_stats-1.1.0-py3-none-any.whl"
 ```
 
 This is not a native Conda package or channel. The generated GitHub source-code
@@ -148,14 +148,19 @@ is not part of release `1.0.1`. Do not resume its matrix. The current
 `.github/workflows/distribution.yml` manually builds only the universal wheel
 that will be attached to the GitHub release.
 
-## Public GitHub wheel release sequence
+For the 1.1.0 release contract, the only published artifacts are one universal
+`py3-none-any` wheel and a `SHA256SUMS` file containing its digest. No source
+archive, native platform wheel, Conda package, OCI image, or Apptainer image is
+part of this release contract.
 
-Create the immutable annotated `1.0.1` tag on the merged release commit and
+## Public GitHub wheel release sequence (1.1.0)
+
+Create the immutable annotated `1.1.0` tag on the merged release commit and
 dispatch the one-wheel workflow on that tag. It builds exactly
-`vcf_sv_stats-1.0.1-py3-none-any.whl`; no other distribution format is built.
+`vcf_sv_stats-1.1.0-py3-none-any.whl`; no other distribution format is built.
 
 After the tag-ref run succeeds, download and verify the exact universal wheel,
-make the repository public, enable and read back private vulnerability
-reporting, and attach only the wheel and its `SHA256SUMS` file to the public
-GitHub release. Leave Sigstore publication disabled. Public GitHub visibility
-and these two release assets do not authorize any registry upload.
+generate `SHA256SUMS`, perform a fresh anonymous install, and attach exactly the
+wheel and checksum to a GitHub Release in the already-public repository. Leave Sigstore
+publication disabled. No visibility or vulnerability-setting mutation is part
+of this sequence, and these two release assets do not authorize registry upload.
