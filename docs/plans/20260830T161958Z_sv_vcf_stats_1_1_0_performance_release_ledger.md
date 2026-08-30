@@ -14,6 +14,7 @@ Objective: make the existing thread option control HTSlib/BGZF input decompressi
 - No process sharding, per-contig workers, new dependencies, schema changes, compatibility aliases, output-strategy fields, dependency upgrades, broad refactors, DayOA/DYEC changes, production reruns, PyPI, Conda, container, Apptainer, or Sigstore publication.
 - Local validation is intentionally focused. Existing automatic PR CI may run unchanged.
 - Any material expansion requires explicit user approval and a plan-amendment row before implementation.
+- Approved amendment: add a repository-local, public-safe AGENTS.md and refresh README.md with restrained open-source styling inspired by the user-supplied rgbw_colorspace_converter reference. These documentation changes must not name LSMC, disclose local/internal instructions, copy reference prose or assets, or change runtime/release behavior.
 
 ## Multi-agent ownership
 
@@ -52,6 +53,9 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | BASE-002 | Baseline | Use a fresh release worktree from origin/main and exclude the stale operator branch | SUCCESS | legitimate_safety_handling | Gate 0 | Lead | Four clean branches/worktrees at da08f6808d6d4404451ce3244c98a5442cc57132 |  | Fresh isolated worktrees created; stale checkout untouched. |
 | BASE-003 | Baseline | Record no-op thread path, serial scan, all-record SQLite writes, duplicate rendering, and near-single-core evidence | SUCCESS | contract_test | Gate 0 | Lead | Source paths and 20260813 thread receipt summarized above |  | Current bottlenecks and semantic boundary are attributable. |
 | BASE-004 | Baseline | Confirm one universal wheel plus SHA256SUMS release contract | SUCCESS | active_product_contract | Gate 0 | Lead | origin/main distribution workflow; GitHub Release 1.0.1 asset inventory |  | Existing distribution contract remains exactly two release assets. |
+| AMEND-001 | Scope | Record explicit approval for public-safe AGENTS.md and low-key styled README.md refresh | SUCCESS | active_product_contract | Gate 3 | Lead | User instruction received while PR #17 CI was running |  | The documentation-only expansion is approved and bounded by the public-repository constraints above. |
+| DOCS-001 | Documentation | Add repository-local open-source AGENTS.md with no LSMC or sensitive/internal content | OPEN | active_product_contract | Gate 3 | Lead | Pending public-safety and instruction audit |  |  |
+| DOCS-002 | Documentation | Refresh README.md with restrained reference-inspired features without naming LSMC | OPEN | active_product_contract | Gate 3 | Lead | Pending reference review, render/source audit, and documentation tests |  |  |
 | PERF-001 | IO | Propagate OperationRequest.threads to pysam.VariantFile(..., threads=N), default 1, reject less than 1 | SUCCESS | feature_implementation | Gate 1 | IO performance agent | Integrated commit c726201; focused propagation/default/API+CLI rejection, VCF 4.5, BCF, and normalization checks in 22-test combined run |  | All owned input readers receive the requested count; output writing and Python semantics stay serial. |
 | PERF-002 | Event store | Persist a row only for record ID, event ID, mate ID, or BND while retaining all diagnostics | SUCCESS | feature_implementation | Gate 1 | Event-store agent | Integrated commit fdf092f; tests/test_event_relationships.py plus existing malformed/relationship test -> 4 passed |  | Sparse insertion preserves duplicate, event, mate, orphan, reciprocal BND, and empty-graph results. |
 | PERF-003 | Event store | Create EventStore indexes only after ingestion immediately before summarization | SUCCESS | feature_implementation | Gate 1 | Event-store agent | EventStore init has no indexes; summarize creates four IF NOT EXISTS indexes; focused lifecycle assertion passed |  | Index maintenance is deferred until immediately before summary queries. |
@@ -99,6 +103,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:44Z: integrated the two final evidence commits; BENCH-001 passed with a 25.030870 percent threads=1 improvement, 0.026662 percent threads=8 regression, semantic parity, and bounded temporary storage.
 - 2026-08-30T16:45Z: final combined focused validation passed 32 tests, two receipt schema validations, Ruff, mypy across 25 package files, and git diff --check; COMPAT-001 and PR-002 are terminal SUCCESS.
 - 2026-08-30T16:46Z: pushed the clean release branch and opened ready PR #17 to main; the existing unchanged PR CI now controls PR-004.
+- 2026-08-30T16:48Z: user explicitly expanded scope to a public-safe repository AGENTS.md and a low-key reference-inspired README refresh; AMEND-001 records the authorization before either file is edited.
 
 ## Final report
 
@@ -106,6 +111,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 18; OPEN 7; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 19; OPEN 9; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: PR CI/merge, release workflow, anonymous install, and post-release closeout remain unproven.
