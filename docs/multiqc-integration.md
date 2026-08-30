@@ -21,6 +21,39 @@ It does **not** read:
 This keeps aggregate reporting independent of HTSlib and prevents a reporting
 layer from silently reinterpreting caller dialects.
 
+## Prepare and render a native MultiQC report
+
+Use an environment containing `vcf-sv-stats` and a maintained-fork MultiQC
+release that registers the native module key `vcf_sv_stats`. Generate one
+digest-bound summary for each callset, or for each explicit analysis-unit
+grouping, and keep the required filename suffix:
+
+```bash
+mkdir -p results/vcf-sv-stats
+vcf-sv-stats stats calls.vcf.gz \
+  --output results/vcf-sv-stats/sample.vcf-sv-stats.json
+```
+
+Then point MultiQC at the containing results tree. Selecting the module
+explicitly makes this a focused report run:
+
+```bash
+multiqc results/ \
+  --module vcf_sv_stats \
+  --outdir multiqc-report/
+```
+
+A normal all-module MultiQC scan can discover the same files automatically.
+The native module writes `multiqc-report/multiqc_report.html` and exports its
+parsed data as `multiqc-report/multiqc_data/multiqc_vcf_sv_stats.json`.
+
+This is native module input, not MultiQC `custom_content`. Do not hand-edit,
+reformat, or rename the summary after generation: the consumer requires the
+`*.vcf-sv-stats.json` suffix and validates the schema, content signature, and
+payload digest before displaying any value. One summary may contain multiple
+`reports[]` entries; each becomes a deterministic MultiQC sample keyed by its
+`report_id`.
+
 ## Executable reference contract
 
 `vcf_sv_stats.multiqc.ingest_summaries` is the dependency-free producer-side
