@@ -65,7 +65,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | BENCH-001 | Benchmark | Run bounded indexed one-million-record 24-contig gVCF benchmark with two warm repetitions; enforce speed, thread, digest, and temp bounds | SUCCESS | contract_test | Gate 2 | Evidence/release agent | Schema-valid receipts docs/benchmarks/20260830T1628Z_bench-001_1.0.1.json and 20260830T1630Z_bench-001_1.1.0.json; medians 6,123,152,250 ns (1.0.1 t1), 4,590,473,958.5 ns (candidate t1), 4,591,697,875 ns (candidate t8); normalized semantic SHA256 2c758bd603c64f6600bb47e05e9fc95fe2aa8a66ec68fce8c63e9480e2825ed2 |  | Candidate t1 improved 25.030870%; t8 regressed only 0.026662% from candidate t1; peak temp was 31,633,408 bytes released and 32,768 bytes candidate, with zero final temp bytes. |
 | PR-001 | Integration | Integrate disjoint patches into the clean release branch | SUCCESS | feature_implementation | Gate 3 | Lead | EventStore fdf092f, IO c726201, and evidence dfecd83/34382d3/46a64f4/f2f8130/1081536 cherry-picked without conflict |  | All disjoint agent slices are on the clean release branch. |
 | PR-002 | Integration | Limit integrated changes to approved performance/threading, focused tests, and release documentation | SUCCESS | active_product_contract | Gate 3 | Lead | origin/main...HEAD audit: 17 files limited to five package modules, four focused test files, one bounded input generator, and approved performance/release/ledger documentation; no .github, dependency, schema, or DayOA/DYEC changes |  | Integrated scope matches the approved plan exactly. |
-| PR-003 | Integration | Push branch and open a ready PR to main | OPEN | active_product_contract | Gate 3 | Lead | Pending PR URL |  |  |
+| PR-003 | Integration | Push branch and open a ready PR to main | SUCCESS | active_product_contract | Gate 3 | Lead | Ready PR https://github.com/lsmc-bio/sv-vcf-stats/pull/17 targets main from codex/sv-vcf-stats-1-1-0-fast-stats |  | Branch pushed normally and PR opened without bypass settings. |
 | PR-004 | Integration | Resolve only attributable failures and merge normally after existing CI passes | OPEN | active_product_contract | Gate 3 | Lead | Pending check and merge receipts |  |  |
 | REL-001 | Release | Verify clean merged main contains exactly approved changes | OPEN | active_product_contract | Gate 4 | Lead | Pending merged commit audit |  |  |
 | REL-002 | Release | Create/push annotated non-v 1.1.0 tag and verify object plus peeled commit | OPEN | active_product_contract | Gate 4 | Lead | Pending tag receipt |  |  |
@@ -98,6 +98,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:43Z: TEST-001 and TEST-002 passed on the exact one-million-record input using fresh 1.0.1 and 1.1.0 wheel environments; thread 1/2/8 outputs are equal and normalized cross-version semantics match.
 - 2026-08-30T16:44Z: integrated the two final evidence commits; BENCH-001 passed with a 25.030870 percent threads=1 improvement, 0.026662 percent threads=8 regression, semantic parity, and bounded temporary storage.
 - 2026-08-30T16:45Z: final combined focused validation passed 32 tests, two receipt schema validations, Ruff, mypy across 25 package files, and git diff --check; COMPAT-001 and PR-002 are terminal SUCCESS.
+- 2026-08-30T16:46Z: pushed the clean release branch and opened ready PR #17 to main; the existing unchanged PR CI now controls PR-004.
 
 ## Final report
 
@@ -105,6 +106,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 17; OPEN 8; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 18; OPEN 7; IN_PROGRESS 0; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: PR CI/merge, release workflow, anonymous install, and post-release closeout remain unproven.
