@@ -10,11 +10,7 @@ reference-block-heavy gVCF with one million records and 24 contigs:
 
 ```bash
 root=$(mktemp -d /tmp/vcf-sv-stats-1.1.0.XXXXXX)
-uv run python tools/generate_benchmark_vcf.py --output "$root/one-million.g.vcf.gz" \
-  --manifest "$root/input.json" --class-id reference-block-heavy-24-contig \
-  --records 1000000 --samples 1 --contigs 24 --seed 17
-uv run python -c 'import pysam, sys; pysam.tabix_index(sys.argv[1], preset="vcf", force=False)' \
-  "$root/one-million.g.vcf.gz"
+uv run python tools/generate_gvcf_benchmark.py --output "$root/one-million.g.vcf.gz"
 ```
 
 Keep this input and index unchanged for both versions. Apply an operator-owned
@@ -22,11 +18,13 @@ bounded storage limit to `$root` before generation.
 
 ## BENCH-001 measurements
 
-On the same host and input, run each version twice at threads 1 and 8:
+On the same host and input, first perform one unrecorded cache warm-up for each
+configuration. Then record exactly two repetitions for released 1.0.1 at
+threads=1, and for the candidate at threads=1 and threads=8:
 
 ```bash
 uv run python tools/benchmark_streaming.py --input "$root/one-million.g.vcf.gz" \
-  --output "$root/1.0.1.json" --repetitions 2 --threads 1 --threads 8 \
+  --output "$root/1.0.1.json" --repetitions 2 --threads 1 \
   --source-commit <40-char-1.0.1-commit>
 uv run python tools/benchmark_streaming.py --input "$root/one-million.g.vcf.gz" \
   --output "$root/1.1.0.json" --repetitions 2 --threads 1 --threads 8 \

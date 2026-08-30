@@ -153,11 +153,11 @@ For the 1.1.0 release contract, the only published artifacts are one universal
 archive, native platform wheel, Conda package, OCI image, or Apptainer image is
 part of this release contract.
 
-## Public GitHub wheel release sequence
+## Public GitHub wheel release sequence (1.1.0)
 
-Create the immutable annotated `1.0.1` tag on the merged release commit and
+Create the immutable annotated `1.1.0` tag on the merged release commit and
 dispatch the one-wheel workflow on that tag. It builds exactly
-`vcf_sv_stats-1.0.1-py3-none-any.whl`; no other distribution format is built.
+`vcf_sv_stats-1.1.0-py3-none-any.whl`; no other distribution format is built.
 
 After the tag-ref run succeeds, download and verify the exact universal wheel,
 make the repository public, enable and read back private vulnerability

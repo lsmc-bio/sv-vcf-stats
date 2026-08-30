@@ -34,7 +34,7 @@ def test_complete_supported_distribution_matrix(tmp_path: Path) -> None:
     assert receipt["all_supported_targets_passed"] is True
 
 
-def test_distribution_workflow_scans_loaded_platform_images() -> None:
+def test_distribution_workflow_builds_one_universal_wheel() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in workflow
@@ -47,14 +47,14 @@ def test_distribution_workflow_scans_loaded_platform_images() -> None:
         assert f"  {retired_job}:" not in workflow
 
 
-def test_distribution_workflow_uses_exact_keyless_identity_on_default_branch() -> None:
+def test_distribution_workflow_has_no_extra_release_formats_or_signing() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
     assert "id-token:" not in workflow
     assert "cosign" not in workflow
     assert "sigstore" not in workflow
 
 
-def test_tagged_distribution_qualification_requires_exact_tag_version() -> None:
+def test_one_wheel_workflow_requires_an_exact_tag_version() -> None:
     workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
 
     assert workflow.count('test "$GITHUB_REF_TYPE" = tag') == 1
@@ -63,5 +63,5 @@ def test_tagged_distribution_qualification_requires_exact_tag_version() -> None:
         'test "$(basename "$wheel")" = "vcf_sv_stats-${GITHUB_REF_NAME}-py3-none-any.whl"'
         in workflow
     )
-    assert "source" not in workflow
-    assert "container" not in workflow
+    assert "uv build --sdist" not in workflow
+    assert "docker build" not in workflow
