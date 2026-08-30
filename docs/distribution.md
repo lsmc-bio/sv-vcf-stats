@@ -160,7 +160,7 @@ dispatch the one-wheel workflow on that tag. It builds exactly
 `vcf_sv_stats-1.1.0-py3-none-any.whl`; no other distribution format is built.
 
 After the tag-ref run succeeds, download and verify the exact universal wheel,
-make the repository public, enable and read back private vulnerability
-reporting, and attach only the wheel and its `SHA256SUMS` file to the public
-GitHub release. Leave Sigstore publication disabled. Public GitHub visibility
-and these two release assets do not authorize any registry upload.
+generate `SHA256SUMS`, perform a fresh anonymous install, and attach exactly the
+wheel and checksum to the already-public GitHub release. Leave Sigstore
+publication disabled. No visibility or vulnerability-setting mutation is part
+of this sequence, and these two release assets do not authorize registry upload.
