@@ -22,7 +22,7 @@ All branches start at origin/main commit da08f6808d6d4404451ce3244c98a5442cc5713
 | Owner | Model | Effort | Branch/worktree | Disjoint write scope |
 |---|---|---:|---|---|
 | Lead/integrator | gpt-5.6-sol | medium | codex/sv-vcf-stats-1-1-0-fast-stats at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-fast-stats | This ledger, integration-only conflict resolution, PR/release/closeout receipts |
-| IO performance agent | gpt-5.6-sol | high | codex/sv-vcf-stats-1-1-0-io at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-io | src/vcf_sv_stats/io.py, engine.py, canonical.py and focused IO/render tests only |
+| IO performance agent | gpt-5.6-sol | high | codex/sv-vcf-stats-1-1-0-io at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-io | src/vcf_sv_stats/io.py, engine.py, canonical.py, the minimum normalization.py thread propagation, and focused IO/render tests only |
 | Event-store agent | gpt-5.6-terra | medium | codex/sv-vcf-stats-1-1-0-event-store at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-event-store | src/vcf_sv_stats/events.py and focused relationship/EventStore tests only |
 | Evidence/release agent | gpt-5.6-luna | low | codex/sv-vcf-stats-1-1-0-evidence at /Users/jmajor/projects/lsmc/.codex-worktrees/sv-vcf-stats-1-1-0-evidence | tests/test_distribution_qualification.py, performance/threading and release documentation, bounded benchmark evidence only |
 
@@ -53,13 +53,13 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 | BASE-003 | Baseline | Record no-op thread path, serial scan, all-record SQLite writes, duplicate rendering, and near-single-core evidence | SUCCESS | contract_test | Gate 0 | Lead | Source paths and 20260813 thread receipt summarized above |  | Current bottlenecks and semantic boundary are attributable. |
 | BASE-004 | Baseline | Confirm one universal wheel plus SHA256SUMS release contract | SUCCESS | active_product_contract | Gate 0 | Lead | origin/main distribution workflow; GitHub Release 1.0.1 asset inventory |  | Existing distribution contract remains exactly two release assets. |
 | PERF-001 | IO | Propagate OperationRequest.threads to pysam.VariantFile(..., threads=N), default 1, reject less than 1 | IN_PROGRESS | feature_implementation | Gate 1 | IO performance agent | Agent dispatched in isolated IO worktree |  |  |
-| PERF-002 | Event store | Persist a row only for record ID, event ID, mate ID, or BND while retaining all diagnostics | IN_PROGRESS | feature_implementation | Gate 1 | Event-store agent | Agent dispatched in isolated EventStore worktree |  |  |
-| PERF-003 | Event store | Create EventStore indexes only after ingestion immediately before summarization | IN_PROGRESS | feature_implementation | Gate 1 | Event-store agent | Agent dispatched in isolated EventStore worktree |  |  |
+| PERF-002 | Event store | Persist a row only for record ID, event ID, mate ID, or BND while retaining all diagnostics | SUCCESS | feature_implementation | Gate 1 | Event-store agent | Integrated commit fdf092f; tests/test_event_relationships.py plus existing malformed/relationship test -> 4 passed |  | Sparse insertion preserves duplicate, event, mate, orphan, reciprocal BND, and empty-graph results. |
+| PERF-003 | Event store | Create EventStore indexes only after ingestion immediately before summarization | SUCCESS | feature_implementation | Gate 1 | Event-store agent | EventStore init has no indexes; summarize creates four IF NOT EXISTS indexes; focused lifecycle assertion passed |  | Index maintenance is deferred until immediately before summary queries. |
 | PERF-004 | IO | Render each VCF record once and reuse raw FILTER/INFO fields | IN_PROGRESS | feature_implementation | Gate 1 | IO performance agent | Agent dispatched in isolated IO worktree |  |  |
 | COMPAT-001 | Compatibility | Preserve serial semantics, schemas, dependencies, CLI shape, diagnostics, and output strategy | OPEN | active_product_contract | Gate 1 | Lead | Integrated diff and parity checks pending |  |  |
 | TEST-001 | Validation | Candidate outputs at threads 1, 2, and 8 are identical subject to available CPUs | OPEN | contract_test | Gate 2 | Lead | Pending focused thread-parity run |  |  |
 | TEST-002 | Validation | Candidate matches released 1.0.1 after producer-version and dependent payload-digest normalization | IN_PROGRESS | contract_test | Gate 2 | Evidence/release agent | Agent dispatched to prepare and run released-wheel parity evidence |  |  |
-| TEST-003 | Validation | Cover reciprocal cross-contig BNDs, orphan mates, duplicate IDs, explicit events, and reference-block-heavy gVCFs | IN_PROGRESS | contract_test | Gate 2 | Event-store agent | Agent dispatched for focused relationship fixtures |  |  |
+| TEST-003 | Validation | Cover reciprocal cross-contig BNDs, orphan mates, duplicate IDs, explicit events, and reference-block-heavy gVCFs | SUCCESS | contract_test | Gate 2 | Event-store agent | tests/test_event_relationships.py and test_malformed_and_relationship_findings -> 4 passed in integrated worktree |  | Cross-contig reciprocal pair, orphan, duplicate, explicit event, BND without mate, and 1,000 reference blocks are covered. |
 | TEST-004 | Validation | Run targeted pytest, Ruff touched files, mypy package, and no broad local suite | OPEN | contract_test | Gate 2 | Lead | Pending integrated focused checks |  |  |
 | TEST-005 | Distribution | Replace only three stale broad-matrix assertions with one-wheel workflow assertions | IN_PROGRESS | contract_test | Gate 2 | Evidence/release agent | Agent dispatched for test-only workflow-contract patch |  |  |
 | BENCH-001 | Benchmark | Run bounded indexed one-million-record 24-contig gVCF benchmark with two warm repetitions; enforce speed, thread, digest, and temp bounds | IN_PROGRESS | contract_test | Gate 2 | Evidence/release agent | Agent dispatched to prepare the bounded benchmark and later run it against the integrated candidate |  |  |
@@ -91,6 +91,7 @@ Statuses: OPEN, IN_PROGRESS, ATTEMPTING_BUGFIX, SUCCESS, DUPLICATE, NO_LONGER_NE
 - 2026-08-30T16:18Z: created lead and three agent worktrees from exact origin/main with disjoint branches and write scopes.
 - 2026-08-30T16:19Z: Gate 0 terminal with four SUCCESS rows; no implementation started before this ledger.
 - 2026-08-30T16:22Z: dispatched the three requested isolated workstreams with exact model/effort assignments and disjoint write ownership.
+- 2026-08-30T16:28Z: integrated EventStore commit fdf092f; focused relationship tests passed 4/4 and Ruff passed on touched files.
 
 ## Final report
 
@@ -98,6 +99,6 @@ All rows terminal: no
 
 Objective complete: no
 
-Status counts: SUCCESS 4; OPEN 13; IN_PROGRESS 8; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
+Status counts: SUCCESS 7; OPEN 13; IN_PROGRESS 5; ATTEMPTING_BUGFIX 0; DUPLICATE 0; NO_LONGER_NEEDED 0; FAIL 0; BLOCKED 0.
 
 Residual risks: benchmark thresholds, PR CI, release workflow, anonymous install, and post-release closeout remain unproven.
